@@ -18,13 +18,18 @@ struct KaraokeView: View {
         activeIndex(in: lines, at: musicObserver.playbackPosition + syncOffset)
     }
 
+    private func lineDuration(for index: Int) -> TimeInterval {
+        guard index + 1 < lines.count else { return 0.9 }
+        let available = lines[index + 1].timestamp - lines[index].timestamp
+        return min(max(available * 0.85, 0.3), 1.5)
+    }
+
     var body: some View {
         ScrollViewReader { proxy in
             ScrollView(.vertical, showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 10) {
                     ForEach(Array(lines.enumerated()), id: \.offset) { index, line in
                         ZStack(alignment: .leading) {
-                            // Base — always present; hidden when active, dim when inactive
                             Text(line.text)
                                 .font(.title3.bold())
                                 .foregroundColor(.white)
@@ -33,7 +38,6 @@ struct KaraokeView: View {
                                 .multilineTextAlignment(.leading)
                                 .frame(maxWidth: .infinity, alignment: .leading)
 
-                            // Active — per-glyph TextTransition on insertion
                             if index == active {
                                 Text(line.text)
                                     .customAttribute(EmphasisAttribute())
@@ -42,7 +46,7 @@ struct KaraokeView: View {
                                     .multilineTextAlignment(.leading)
                                     .frame(maxWidth: .infinity, alignment: .leading)
                                     .transition(.asymmetric(
-                                        insertion: AnyTransition(TextTransition()),
+                                        insertion: AnyTransition(TextTransition(duration: lineDuration(for: index))),
                                         removal: .opacity.animation(.easeOut(duration: 0.15))
                                     ))
                             }

@@ -71,15 +71,22 @@ extension Text.Layout {
 }
 
 struct TextTransition: Transition {
+    var duration: TimeInterval
+
+    init(duration: TimeInterval = 0.9) {
+        self.duration = duration
+    }
+
     static var properties: TransitionProperties {
         TransitionProperties(hasMotion: true)
     }
 
     func body(content: Content, phase: TransitionPhase) -> some View {
-        let duration = 0.9
         let elapsedTime = phase.isIdentity ? duration : 0
+        let scaledElementDuration = min(duration * 0.44, 0.4)
         let renderer = AppearanceEffectRenderer(
             elapsedTime: elapsedTime,
+            elementDuration: scaledElementDuration,
             totalDuration: duration
         )
         content.transaction { transaction in
