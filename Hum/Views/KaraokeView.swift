@@ -42,7 +42,7 @@ struct KaraokeView: View {
                                 .transition(.opacity.animation(.easeIn(duration: 0.15)))
                             } else {
                                 Text(line.text)
-                                    .font(.title3)
+                                    .font(.title3.bold())
                                     .foregroundColor(.white)
                                     .opacity(0.3)
                                     .multilineTextAlignment(.leading)
