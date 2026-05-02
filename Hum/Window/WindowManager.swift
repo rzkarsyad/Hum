@@ -21,12 +21,15 @@ final class WindowManager: NSObject, NSWindowDelegate {
     }
 
     private func restoreOrSetDefaultPosition() {
+        let size = CGSize(width: 320, height: 260)
         if let saved = UserDefaults.standard.string(forKey: "windowFrame") {
-            let frame = NSRectFromString(saved)
-            if frame != .zero { panel.setFrame(frame, display: false); return }
+            let oldFrame = NSRectFromString(saved)
+            if oldFrame != .zero {
+                panel.setFrame(CGRect(origin: oldFrame.origin, size: size), display: false)
+                return
+            }
         }
         guard let screen = NSScreen.main else { return }
-        let size = CGSize(width: 320, height: 220)
         let origin = CGPoint(
             x: screen.visibleFrame.midX - size.width / 2,
             y: screen.visibleFrame.minY + 60
