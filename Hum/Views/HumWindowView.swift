@@ -44,7 +44,7 @@ struct HumWindowView: View {
                 }
             }
         }
-        .frame(width: 320, height: 276)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .clipShape(RoundedRectangle(cornerRadius: 16))
     }
 }

@@ -17,18 +17,26 @@ final class WindowManager: NSObject, NSWindowDelegate {
     func hide() { panel.orderOut(nil) }
 
     func windowDidMove(_ notification: Notification) {
+        saveFrame()
+    }
+
+    func windowDidResize(_ notification: Notification) {
+        saveFrame()
+    }
+
+    private func saveFrame() {
         UserDefaults.standard.set(NSStringFromRect(panel.frame), forKey: "windowFrame")
     }
 
     private func restoreOrSetDefaultPosition() {
-        let size = CGSize(width: 320, height: 276)
         if let saved = UserDefaults.standard.string(forKey: "windowFrame") {
-            let oldFrame = NSRectFromString(saved)
-            if oldFrame != .zero {
-                panel.setFrame(CGRect(origin: oldFrame.origin, size: size), display: false)
+            let savedFrame = NSRectFromString(saved)
+            if savedFrame != .zero {
+                panel.setFrame(savedFrame, display: false)
                 return
             }
         }
+        let size = CGSize(width: 320, height: 276)
         guard let screen = NSScreen.main else { return }
         let origin = CGPoint(
             x: screen.visibleFrame.midX - size.width / 2,
@@ -40,13 +48,19 @@ final class WindowManager: NSObject, NSWindowDelegate {
 
 private final class FloatingPanel: NSPanel {
     override init(contentRect: NSRect, styleMask: NSWindow.StyleMask, backing: NSWindow.BackingStoreType, defer flag: Bool) {
-        super.init(contentRect: .zero, styleMask: [.nonactivatingPanel, .fullSizeContentView, .borderless], backing: .buffered, defer: false)
+        super.init(
+            contentRect: .zero,
+            styleMask: [.nonactivatingPanel, .fullSizeContentView, .borderless, .resizable],
+            backing: .buffered,
+            defer: false
+        )
         level = .floating
         isOpaque = false
         backgroundColor = .clear
         hidesOnDeactivate = false
         isMovableByWindowBackground = true
         collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
+        minSize = CGSize(width: 200, height: 150)
     }
 
     override var canBecomeKey: Bool { false }
