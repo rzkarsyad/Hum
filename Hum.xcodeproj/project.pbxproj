@@ -12,6 +12,7 @@
 		7305DA28DA374F62C73D2887 /* Track.swift in Sources */ = {isa = PBXBuildFile; fileRef = E601D5E2E43A0D85F16CCF98 /* Track.swift */; };
 		76C6B257FD2780CCF197EA23 /* LRCParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8ADFEA5EA5E90B6C16317FAB /* LRCParser.swift */; };
 		A465D5F0BF56748782D9AC35 /* LRCLIBSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6F0318A2F89BE471687559C /* LRCLIBSource.swift */; };
+		AE1F4549E08AEF9E64924879 /* MusicObserver.swift in Sources */ = {isa = PBXBuildFile; fileRef = A71A4A168755ADB39CDDE598 /* MusicObserver.swift */; };
 		AE1F6D945F3B9A0D5C4E23A5 /* MusicKitSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C6DEEF97E3EE48899162178 /* MusicKitSource.swift */; };
 		B85DE856FF6E11D5B6415F88 /* LyricsEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38362647FCBE534810B8B1C0 /* LyricsEngine.swift */; };
 		D3893A676538A199EC320E5C /* LyricsEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D44CE1050F87B8208EFC257 /* LyricsEngineTests.swift */; };
@@ -40,6 +41,7 @@
 		8ADFEA5EA5E90B6C16317FAB /* LRCParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LRCParser.swift; sourceTree = "<group>"; };
 		9A7214A89BA961F2B8081A78 /* LRCParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LRCParserTests.swift; sourceTree = "<group>"; };
 		A02784DA6CF9B57A0C8CA514 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		A71A4A168755ADB39CDDE598 /* MusicObserver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MusicObserver.swift; sourceTree = "<group>"; };
 		ADCCDFCDE8EC033A84466191 /* HumApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HumApp.swift; sourceTree = "<group>"; };
 		D4C2541AAC3AE9BCF56766DA /* Hum.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Hum.entitlements; sourceTree = "<group>"; };
 		D6F0318A2F89BE471687559C /* LRCLIBSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LRCLIBSource.swift; sourceTree = "<group>"; };
@@ -63,6 +65,14 @@
 				07A6A6AD08CFB98CC994D668 /* HumTests */,
 				F445627DA0DD0026192EE98F /* Products */,
 			);
+			sourceTree = "<group>";
+		};
+		5AA8B0258AFE9D94B2171C01 /* MusicObserver */ = {
+			isa = PBXGroup;
+			children = (
+				A71A4A168755ADB39CDDE598 /* MusicObserver.swift */,
+			);
+			path = MusicObserver;
 			sourceTree = "<group>";
 		};
 		93B0E5385C04B687AE53DDFF /* Models */ = {
@@ -94,6 +104,7 @@
 				A02784DA6CF9B57A0C8CA514 /* Info.plist */,
 				E2F7CFE0C34CCE76A6DCB1C1 /* LyricsEngine */,
 				93B0E5385C04B687AE53DDFF /* Models */,
+				5AA8B0258AFE9D94B2171C01 /* MusicObserver */,
 			);
 			path = Hum;
 			sourceTree = "<group>";
@@ -197,6 +208,7 @@
 				B85DE856FF6E11D5B6415F88 /* LyricsEngine.swift in Sources */,
 				E514F87B833CB34FA1FD48B0 /* LyricsSource.swift in Sources */,
 				AE1F6D945F3B9A0D5C4E23A5 /* MusicKitSource.swift in Sources */,
+				AE1F4549E08AEF9E64924879 /* MusicObserver.swift in Sources */,
 				7305DA28DA374F62C73D2887 /* Track.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
