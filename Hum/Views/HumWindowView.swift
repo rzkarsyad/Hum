@@ -41,6 +41,16 @@ struct HumWindowView: View {
                         musicObserver: musicObserver,
                         syncOffset: lyricsState.syncOffset
                     )
+                } else if lyricsState.noLyricsFound {
+                    VStack {
+                        Spacer()
+                        Text("Oops, we don't have lyrics for this one")
+                            .font(.callout)
+                            .foregroundColor(.white.opacity(0.5))
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, 20)
+                        Spacer()
+                    }
                 }
             }
         }
