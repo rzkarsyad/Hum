@@ -14,11 +14,12 @@ struct KaraokeView: View, Equatable {
     let active: Int?
     let fontSize: CGFloat
 
-    @State private var scrollTarget: Int? = nil
-
     static func == (lhs: KaraokeView, rhs: KaraokeView) -> Bool {
         lhs.lines == rhs.lines && lhs.active == rhs.active && lhs.fontSize == rhs.fontSize
     }
+
+    private var lineSpacing: CGFloat { 10 }
+    private var lineHeight: CGFloat { ceil(fontSize * 1.25) + lineSpacing }
 
     private func lineDuration(for index: Int) -> TimeInterval {
         guard index + 1 < lines.count else { return 0.9 }
@@ -27,8 +28,13 @@ struct KaraokeView: View, Equatable {
     }
 
     var body: some View {
-        ScrollView(.vertical, showsIndicators: false) {
-            VStack(alignment: .leading, spacing: 10) {
+        GeometryReader { geo in
+            let translateY: CGFloat = {
+                let idx = CGFloat(active ?? 0)
+                return geo.size.height / 2 - (idx + 0.5) * lineHeight
+            }()
+
+            VStack(alignment: .leading, spacing: lineSpacing) {
                 ForEach(Array(lines.enumerated()), id: \.offset) { index, line in
                     ZStack(alignment: .leading) {
                         Text(line.text)
@@ -52,18 +58,11 @@ struct KaraokeView: View, Equatable {
                         }
                     }
                     .padding(.horizontal, 16)
-                    .id(index)
                 }
             }
-            .scrollTargetLayout()
-            .padding(.vertical, 24)
+            .offset(y: translateY)
+            .animation(.interpolatingSpring(stiffness: 70, damping: 12), value: active)
         }
-        .scrollPosition(id: $scrollTarget, anchor: UnitPoint(x: 0.5, y: 0.5))
-        .onChange(of: active) { _, idx in
-            guard let idx else { return }
-            withAnimation(.interpolatingSpring(stiffness: 65, damping: 11)) {
-                scrollTarget = idx
-            }
-        }
+        .clipped()
     }
 }

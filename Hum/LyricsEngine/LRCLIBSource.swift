@@ -2,16 +2,14 @@ import Foundation
 
 struct LRCLIBSource: LyricsSource {
     func fetchSyncedLyrics(for track: Track) async -> String? {
-        // Try with full info (title + artist + album)
-        if let result = await request(title: track.title, artist: track.artist, album: track.album),
+        if let result = await request(title: track.title, artist: track.artist, album: track.album, duration: track.duration),
            !result.isEmpty {
             return result
         }
-        // Fallback: try without album name
-        return await request(title: track.title, artist: track.artist, album: nil)
+        return await request(title: track.title, artist: track.artist, album: nil, duration: track.duration)
     }
 
-    private func request(title: String, artist: String, album: String?) async -> String? {
+    private func request(title: String, artist: String, album: String?, duration: TimeInterval?) async -> String? {
         var components = URLComponents(string: "https://lrclib.net/api/get")!
         var queryItems = [
             URLQueryItem(name: "track_name", value: title),
@@ -19,6 +17,9 @@ struct LRCLIBSource: LyricsSource {
         ]
         if let album = album {
             queryItems.append(URLQueryItem(name: "album_name", value: album))
+        }
+        if let duration = duration, duration > 0 {
+            queryItems.append(URLQueryItem(name: "duration", value: String(Int(duration.rounded()))))
         }
         components.queryItems = queryItems
         guard let url = components.url else { return nil }

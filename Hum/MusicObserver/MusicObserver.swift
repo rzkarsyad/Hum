@@ -38,11 +38,15 @@ final class MusicObserver: ObservableObject {
         let parts = result.components(separatedBy: "\t")
 
         switch parts.first {
-        case "playing" where parts.count == 5:
-            let track = Track(title: parts[1], artist: parts[2], album: parts[3])
+        case "playing" where parts.count == 6:
+            let track = Track(
+                title: parts[1],
+                artist: parts[2],
+                album: parts[3],
+                duration: TimeInterval(parts[5].replacingOccurrences(of: ",", with: "."))
+            )
             let position = TimeInterval(parts[4].replacingOccurrences(of: ",", with: ".")) ?? 0
             if currentTrack != track { currentTrack = track }
-            // Anchor: record confirmed position + timestamp for interpolation
             basePosition = position
             baseDate = Date()
             playbackPosition = position
@@ -70,7 +74,7 @@ final class MusicObserver: ObservableObject {
         tell application "Music"
             if player state is playing then
                 set t to current track
-                return "playing\t" & (name of t) & "\t" & (artist of t) & "\t" & (album of t) & "\t" & (player position as string)
+                return "playing\t" & (name of t) & "\t" & (artist of t) & "\t" & (album of t) & "\t" & (player position as string) & "\t" & (duration of t as string)
             else if player state is paused then
                 return "paused"
             else
