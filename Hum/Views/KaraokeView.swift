@@ -15,6 +15,8 @@ struct KaraokeView: View {
     let syncOffset: TimeInterval
     let fontSize: CGFloat
 
+    @State private var scrollTarget: Int? = nil
+
     private var active: Int? {
         activeIndex(in: lines, at: musicObserver.playbackPosition + syncOffset)
     }
@@ -26,43 +28,41 @@ struct KaraokeView: View {
     }
 
     var body: some View {
-        ScrollViewReader { proxy in
-            ScrollView(.vertical, showsIndicators: false) {
-                VStack(alignment: .leading, spacing: 10) {
-                    ForEach(Array(lines.enumerated()), id: \.offset) { index, line in
-                        ZStack(alignment: .leading) {
+        ScrollView(.vertical, showsIndicators: false) {
+            VStack(alignment: .leading, spacing: 10) {
+                ForEach(Array(lines.enumerated()), id: \.offset) { index, line in
+                    ZStack(alignment: .leading) {
+                        Text(line.text)
+                            .font(.system(size: fontSize, weight: .bold))
+                            .foregroundColor(.white)
+                            .opacity(0.3)
+                            .multilineTextAlignment(.leading)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+
+                        if index == active {
                             Text(line.text)
+                                .customAttribute(EmphasisAttribute())
                                 .font(.system(size: fontSize, weight: .bold))
                                 .foregroundColor(.white)
-                                .opacity(0.3)
                                 .multilineTextAlignment(.leading)
                                 .frame(maxWidth: .infinity, alignment: .leading)
-
-                            if index == active {
-                                Text(line.text)
-                                    .customAttribute(EmphasisAttribute())
-                                    .font(.system(size: fontSize, weight: .bold))
-                                    .foregroundColor(.white)
-                                    .multilineTextAlignment(.leading)
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                                    .transition(.asymmetric(
-                                        insertion: AnyTransition(TextTransition(duration: lineDuration(for: index))),
-                                        removal: .opacity.animation(.easeOut(duration: 0.15))
-                                    ))
-                            }
+                                .transition(.asymmetric(
+                                    insertion: AnyTransition(TextTransition(duration: lineDuration(for: index))),
+                                    removal: .opacity.animation(.easeOut(duration: 0.15))
+                                ))
                         }
-                        .padding(.horizontal, 16)
-                        .id(index)
                     }
+                    .padding(.horizontal, 16)
+                    .id(index)
                 }
-                .padding(.vertical, 24)
             }
-            .onChange(of: active) { _, idx in
-                if let idx {
-                    withAnimation(.spring(duration: 0.5, bounce: 0.15)) {
-                        proxy.scrollTo(idx, anchor: .center)
-                    }
-                }
+            .scrollTargetLayout()
+            .padding(.vertical, 24)
+        }
+        .scrollPosition(id: $scrollTarget, anchor: UnitPoint(x: 0.5, y: 0.35))
+        .onChange(of: active) { _, idx in
+            withAnimation(.smooth(duration: 0.6)) {
+                scrollTarget = idx
             }
         }
     }
