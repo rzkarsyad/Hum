@@ -21,20 +21,39 @@ struct KaraokeView: View {
     var body: some View {
         ScrollViewReader { proxy in
             ScrollView(.vertical, showsIndicators: false) {
-                VStack(alignment: .center, spacing: 10) {
+                VStack(alignment: .leading, spacing: 10) {
                     ForEach(Array(lines.enumerated()), id: \.offset) { index, line in
-                        Text(line.text)
-                            .font(index == active ? .title3.bold() : .callout)
-                            .foregroundColor(.white)
-                            .opacity(index == active ? 1.0 : 0.45)
-                            .multilineTextAlignment(.center)
-                            .padding(.horizontal, 16)
-                            .id(index)
+                        ZStack(alignment: .leading) {
+                            // Base layer — always present, fades out when this line is active
+                            Text(line.text)
+                                .font(index == active ? .title3.bold() : .callout)
+                                .foregroundColor(.white)
+                                .opacity(index == active ? 0.0 : 0.3)
+                                .animation(.easeOut(duration: 0.2), value: index == active)
+                                .multilineTextAlignment(.leading)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+
+                            // Active layer — animates in with per-glyph TextTransition
+                            if index == active {
+                                Text(line.text)
+                                    .customAttribute(EmphasisAttribute())
+                                    .font(.title3.bold())
+                                    .foregroundColor(.white)
+                                    .multilineTextAlignment(.leading)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .transition(.asymmetric(
+                                        insertion: AnyTransition(TextTransition()),
+                                        removal: .opacity.animation(.easeOut(duration: 0.15))
+                                    ))
+                            }
+                        }
+                        .padding(.horizontal, 16)
+                        .id(index)
                     }
                 }
                 .padding(.vertical, 24)
             }
-            .onChange(of: active) { idx in
+            .onChange(of: active) { _, idx in
                 if let idx {
                     withAnimation(.easeInOut(duration: 0.35)) {
                         proxy.scrollTo(idx, anchor: .center)
