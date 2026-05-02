@@ -61,7 +61,7 @@ struct KaraokeView: View {
         }
         .scrollPosition(id: $scrollTarget, anchor: UnitPoint(x: 0.5, y: 0.35))
         .onChange(of: active) { _, idx in
-            withAnimation(.smooth(duration: 0.6)) {
+            withAnimation(.spring(duration: 0.45, bounce: 0.0)) {
                 scrollTarget = idx
             }
         }
