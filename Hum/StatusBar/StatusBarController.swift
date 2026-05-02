@@ -5,6 +5,7 @@ import Combine
 final class StatusBarController: NSObject {
     private var statusItem: NSStatusItem
     private var cancellables = Set<AnyCancellable>()
+    private var fetchTask: Task<Void, Never>?
     private let musicObserver: MusicObserver
     private let lyricsEngine: LyricsEngine
     private let lyricsState: LyricsState
@@ -66,7 +67,8 @@ final class StatusBarController: NSObject {
             .removeDuplicates()
             .sink { [weak self] track in
                 guard let self else { return }
-                Task { @MainActor in await self.handleTrackChange(track) }
+                self.fetchTask?.cancel()
+                self.fetchTask = Task { @MainActor in await self.handleTrackChange(track) }
             }
             .store(in: &cancellables)
 
@@ -84,6 +86,14 @@ final class StatusBarController: NSObject {
 
     private func handleTrackChange(_ track: Track?) async {
         guard let track else { lyricsState.lines = []; return }
-        lyricsState.lines = await lyricsEngine.fetch(for: track)
+        // Reset sync offset for the new track
+        lyricsState.syncOffset = 0
+        if let stepper = statusItem.menu?.item(at: 1)?.view as? NSStepper {
+            stepper.doubleValue = 0
+        }
+        statusItem.menu?.item(withTag: 1)?.title = "Sync Offset: +0.0s"
+        let lines = await lyricsEngine.fetch(for: track)
+        guard !Task.isCancelled else { return }
+        lyricsState.lines = lines
     }
 }
