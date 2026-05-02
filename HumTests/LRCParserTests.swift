@@ -50,4 +50,12 @@ final class LRCParserTests: XCTestCase {
         XCTAssertEqual(lines.count, 1)
         XCTAssertEqual(lines[0].timestamp, 123 * 60 + 45.67, accuracy: 0.001)
     }
+
+    func test_parsesWindowsLineEndings() {
+        let lrc = "[00:01.00] First\r\n[00:02.00] Second"
+        let lines = LRCParser.parse(lrc)
+        XCTAssertEqual(lines.count, 2)
+        XCTAssertEqual(lines[0].text, "First")
+        XCTAssertEqual(lines[1].text, "Second")
+    }
 }

@@ -1,16 +1,19 @@
 import Foundation
 
 struct LRCParser {
+    private static let lineRegex: NSRegularExpression = {
+        try! NSRegularExpression(pattern: #"^\[(\d{1,3}):(\d{2})\.(\d{2,3})\](.*)"#)
+    }()
+
     static func parse(_ lrc: String) -> [LyricLine] {
-        lrc.components(separatedBy: "\n")
+        lrc.replacingOccurrences(of: "\r\n", with: "\n")
+            .components(separatedBy: "\n")
             .compactMap { parseLine($0) }
             .sorted { $0.timestamp < $1.timestamp }
     }
 
     private static func parseLine(_ line: String) -> LyricLine? {
-        let pattern = #"^\[(\d{1,3}):(\d{2})\.(\d{2,3})\](.*)"#
-        guard let regex = try? NSRegularExpression(pattern: pattern),
-              let match = regex.firstMatch(in: line, range: NSRange(line.startIndex..., in: line)),
+        guard let match = lineRegex.firstMatch(in: line, range: NSRange(line.startIndex..., in: line)),
               match.numberOfRanges == 5 else { return nil }
 
         let minutes = Double(extract(line, match.range(at: 1))) ?? 0
