@@ -7,19 +7,30 @@ final class MusicObserver: ObservableObject {
     @Published private(set) var playbackPosition: TimeInterval = 0
     @Published private(set) var isPlaying: Bool = false
 
-    private var timer: Timer?
+    private var pollTimer: Timer?
+    private var displayTimer: Timer?
+    private var basePosition: TimeInterval = 0
+    private var baseDate: Date = Date()
 
     func start() {
-        let t = Timer(timeInterval: 0.5, repeats: true) { [weak self] _ in
+        // Poll Apple Music every 500ms for track/state/position anchor
+        let poll = Timer(timeInterval: 0.5, repeats: true) { [weak self] _ in
             Task { @MainActor in self?.poll() }
         }
-        RunLoop.main.add(t, forMode: .common)
-        timer = t
+        RunLoop.main.add(poll, forMode: .common)
+        pollTimer = poll
+
+        // Interpolate position at ~60fps between polls for sub-16ms accuracy
+        let display = Timer(timeInterval: 1.0 / 60.0, repeats: true) { [weak self] _ in
+            Task { @MainActor in self?.interpolatePosition() }
+        }
+        RunLoop.main.add(display, forMode: .common)
+        displayTimer = display
     }
 
     func stop() {
-        timer?.invalidate()
-        timer = nil
+        pollTimer?.invalidate(); pollTimer = nil
+        displayTimer?.invalidate(); displayTimer = nil
     }
 
     private func poll() {
@@ -31,6 +42,9 @@ final class MusicObserver: ObservableObject {
             let track = Track(title: parts[1], artist: parts[2], album: parts[3])
             let position = TimeInterval(parts[4].replacingOccurrences(of: ",", with: ".")) ?? 0
             if currentTrack != track { currentTrack = track }
+            // Anchor: record confirmed position + timestamp for interpolation
+            basePosition = position
+            baseDate = Date()
             playbackPosition = position
             isPlaying = true
         case "paused":
@@ -39,7 +53,14 @@ final class MusicObserver: ObservableObject {
             isPlaying = false
             currentTrack = nil
             playbackPosition = 0
+            basePosition = 0
         }
+    }
+
+    private func interpolatePosition() {
+        guard isPlaying else { return }
+        // Estimate current position: anchor + time elapsed since anchor
+        playbackPosition = basePosition + Date().timeIntervalSince(baseDate)
     }
 
     private let pollScript = """
