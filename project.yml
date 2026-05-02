@@ -1,0 +1,34 @@
+name: Hum
+options:
+  bundleIdPrefix: com.rzkarsyad
+  deploymentTarget:
+    macOS: "13.0"
+targets:
+  Hum:
+    type: application
+    platform: macOS
+    sources:
+      - Hum
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.rzkarsyad.Hum
+        SWIFT_VERSION: "5.9"
+        INFOPLIST_FILE: Hum/Info.plist
+        CODE_SIGNING_ALLOWED: "NO"
+    entitlements:
+      path: Hum/Hum.entitlements
+      properties:
+        com.apple.security.app-sandbox: false
+        com.apple.security.automation.apple-events: true
+        com.apple.security.network.client: true
+  HumTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources:
+      - HumTests
+    dependencies:
+      - target: Hum
+    settings:
+      base:
+        MACOSX_DEPLOYMENT_TARGET: "13.0"
+        CODE_SIGNING_ALLOWED: "NO"
