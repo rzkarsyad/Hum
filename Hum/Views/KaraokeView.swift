@@ -21,7 +21,7 @@ struct KaraokeView: View {
     private func lineDuration(for index: Int) -> TimeInterval {
         guard index + 1 < lines.count else { return 0.9 }
         let available = lines[index + 1].timestamp - lines[index].timestamp
-        return min(max(available * 0.85, 0.3), 1.5)
+        return max(available, 0.3)
     }
 
     var body: some View {
@@ -30,18 +30,18 @@ struct KaraokeView: View {
                 VStack(alignment: .leading, spacing: 10) {
                     ForEach(Array(lines.enumerated()), id: \.offset) { index, line in
                         ZStack(alignment: .leading) {
+                            // Base — always at 0.3, never hidden; text is always visible
                             Text(line.text)
-                                .font(.title3.bold())
+                                .font(.title2.bold())
                                 .foregroundColor(.white)
-                                .opacity(index == active ? 0.0 : 0.3)
-                                .animation(.easeOut(duration: 0.2), value: index == active)
+                                .opacity(0.3)
                                 .multilineTextAlignment(.leading)
                                 .frame(maxWidth: .infinity, alignment: .leading)
 
                             if index == active {
                                 Text(line.text)
                                     .customAttribute(EmphasisAttribute())
-                                    .font(.title3.bold())
+                                    .font(.title2.bold())
                                     .foregroundColor(.white)
                                     .multilineTextAlignment(.leading)
                                     .frame(maxWidth: .infinity, alignment: .leading)
