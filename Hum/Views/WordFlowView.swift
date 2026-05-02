@@ -67,11 +67,22 @@ struct WordFlowView: View {
         WordFlowLayout(spacing: 5) {
             ForEach(Array(words.enumerated()), id: \.offset) { _, token in
                 let isLit = playbackPosition >= token.timestamp
-                Text(token.text)
-                    .font(.title3.bold())
-                    .foregroundColor(.white)
-                    .opacity(isLit ? 1.0 : 0.3)
-                    .animation(.spring(duration: 0.15), value: isLit)
+                ZStack {
+                    // Base layer — always present, holds layout space, shows dim text
+                    Text(token.text)
+                        .font(.title3.bold())
+                        .foregroundColor(.white)
+                        .opacity(0.3)
+
+                    // Lit layer — inserted with TextTransition when word's time arrives
+                    if isLit {
+                        Text(token.text)
+                            .customAttribute(EmphasisAttribute())
+                            .font(.title3.bold())
+                            .foregroundColor(.white)
+                            .transition(AnyTransition(TextTransition()))
+                    }
+                }
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
