@@ -51,6 +51,22 @@ final class StatusBarController: NSObject {
         stepperItem.view = stepper
         menu.addItem(stepperItem)
 
+        let fontSizeLabel = NSMenuItem(title: "Text Size: \(Int(lyricsState.fontSize))pt", action: nil, keyEquivalent: "")
+        fontSizeLabel.tag = 4
+        menu.addItem(fontSizeLabel)
+
+        let fontStepperItem = NSMenuItem()
+        let fontStepper = NSStepper()
+        fontStepper.minValue = 12
+        fontStepper.maxValue = 36
+        fontStepper.increment = 2
+        fontStepper.doubleValue = Double(lyricsState.fontSize)
+        fontStepper.target = self
+        fontStepper.action = #selector(fontSizeChanged(_:))
+        fontStepper.frame = CGRect(x: 8, y: 0, width: 100, height: 22)
+        fontStepperItem.view = fontStepper
+        menu.addItem(fontStepperItem)
+
         menu.addItem(.separator())
 
         let hideItem = NSMenuItem(
@@ -94,6 +110,13 @@ final class StatusBarController: NSObject {
         let val = stepper.doubleValue
         let sign = val >= 0 ? "+" : ""
         statusItem.menu?.item(withTag: 1)?.title = "Sync Offset: \(sign)\(val)s"
+    }
+
+    @objc private func fontSizeChanged(_ stepper: NSStepper) {
+        let size = CGFloat(stepper.doubleValue)
+        lyricsState.fontSize = size
+        UserDefaults.standard.set(Double(size), forKey: "humFontSize")
+        statusItem.menu?.item(withTag: 4)?.title = "Text Size: \(Int(size))pt"
     }
 
     @objc private func toggleLaunchAtLogin(_ item: NSMenuItem) {

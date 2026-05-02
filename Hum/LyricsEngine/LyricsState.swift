@@ -6,4 +6,8 @@ final class LyricsState: ObservableObject {
     @Published var syncOffset: TimeInterval = 0
     @Published var isManuallyHidden: Bool = false
     @Published var noLyricsFound: Bool = false
+    @Published var fontSize: CGFloat = {
+        let stored = UserDefaults.standard.double(forKey: "humFontSize")
+        return stored >= 12 ? CGFloat(stored) : 20
+    }()
 }
