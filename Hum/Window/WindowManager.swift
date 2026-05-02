@@ -21,7 +21,7 @@ final class WindowManager: NSObject, NSWindowDelegate {
     }
 
     private func restoreOrSetDefaultPosition() {
-        let size = CGSize(width: 320, height: 260)
+        let size = CGSize(width: 320, height: 276)
         if let saved = UserDefaults.standard.string(forKey: "windowFrame") {
             let oldFrame = NSRectFromString(saved)
             if oldFrame != .zero {
