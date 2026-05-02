@@ -65,4 +65,25 @@ private final class FloatingPanel: NSPanel {
 
     override var canBecomeKey: Bool { false }
     override var canBecomeMain: Bool { false }
+
+    override func resetCursorRects() {
+        super.resetCursorRects()
+        guard let cv = contentView else { return }
+        let b = cv.bounds
+        let e: CGFloat = 8
+
+        // Left and right edges → horizontal resize cursor
+        cv.addCursorRect(CGRect(x: 0,            y: e,            width: e, height: b.height - 2 * e), cursor: .resizeLeftRight)
+        cv.addCursorRect(CGRect(x: b.width - e,  y: e,            width: e, height: b.height - 2 * e), cursor: .resizeLeftRight)
+
+        // Top and bottom edges → vertical resize cursor
+        cv.addCursorRect(CGRect(x: e,            y: 0,            width: b.width - 2 * e, height: e), cursor: .resizeUpDown)
+        cv.addCursorRect(CGRect(x: e,            y: b.height - e, width: b.width - 2 * e, height: e), cursor: .resizeUpDown)
+
+        // Corners → horizontal resize cursor (no diagonal cursor in NSCursor)
+        cv.addCursorRect(CGRect(x: 0,           y: 0,            width: e, height: e), cursor: .resizeLeftRight)
+        cv.addCursorRect(CGRect(x: b.width - e, y: 0,            width: e, height: e), cursor: .resizeLeftRight)
+        cv.addCursorRect(CGRect(x: 0,           y: b.height - e, width: e, height: e), cursor: .resizeLeftRight)
+        cv.addCursorRect(CGRect(x: b.width - e, y: b.height - e, width: e, height: e), cursor: .resizeLeftRight)
+    }
 }
