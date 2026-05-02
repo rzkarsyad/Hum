@@ -6,6 +6,10 @@ final class StatusBarController: NSObject {
     private var statusItem: NSStatusItem
     private var cancellables = Set<AnyCancellable>()
     private var fetchTask: Task<Void, Never>?
+    private var autoShowOnNewTrack: Bool {
+        get { UserDefaults.standard.bool(forKey: "humAutoShowOnNewTrack") }
+        set { UserDefaults.standard.set(newValue, forKey: "humAutoShowOnNewTrack") }
+    }
     private let musicObserver: MusicObserver
     private let lyricsEngine: LyricsEngine
     private let lyricsState: LyricsState
@@ -67,6 +71,16 @@ final class StatusBarController: NSObject {
         loginItem.target = self
         menu.addItem(loginItem)
 
+        let autoShowItem = NSMenuItem(
+            title: "Auto-show on New Track",
+            action: #selector(toggleAutoShow),
+            keyEquivalent: ""
+        )
+        autoShowItem.tag = 3
+        autoShowItem.state = autoShowOnNewTrack ? .on : .off
+        autoShowItem.target = self
+        menu.addItem(autoShowItem)
+
         menu.addItem(.separator())
         menu.addItem(
             NSMenuItem(title: "Quit Hum", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
@@ -89,6 +103,11 @@ final class StatusBarController: NSObject {
 
     @objc private func toggleLyricsVisibility() {
         lyricsState.isManuallyHidden = !lyricsState.isManuallyHidden
+    }
+
+    @objc private func toggleAutoShow() {
+        autoShowOnNewTrack = !autoShowOnNewTrack
+        statusItem.menu?.item(withTag: 3)?.state = autoShowOnNewTrack ? .on : .off
     }
 
     private func observe() {
@@ -131,7 +150,9 @@ final class StatusBarController: NSObject {
         }
         lyricsState.syncOffset = 0
         lyricsState.noLyricsFound = false
-        lyricsState.isManuallyHidden = false
+        if autoShowOnNewTrack {
+            lyricsState.isManuallyHidden = false
+        }
         if let stepper = statusItem.menu?.item(at: 1)?.view as? NSStepper {
             stepper.doubleValue = 0
         }
