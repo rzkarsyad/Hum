@@ -9,16 +9,15 @@ func activeIndex(in lines: [LyricLine], at position: TimeInterval) -> Int? {
     return result
 }
 
-struct KaraokeView: View {
+struct KaraokeView: View, Equatable {
     let lines: [LyricLine]
-    @ObservedObject var musicObserver: MusicObserver
-    let syncOffset: TimeInterval
+    let active: Int?
     let fontSize: CGFloat
 
     @State private var scrollTarget: Int? = nil
 
-    private var active: Int? {
-        activeIndex(in: lines, at: musicObserver.playbackPosition + syncOffset)
+    static func == (lhs: KaraokeView, rhs: KaraokeView) -> Bool {
+        lhs.lines == rhs.lines && lhs.active == rhs.active && lhs.fontSize == rhs.fontSize
     }
 
     private func lineDuration(for index: Int) -> TimeInterval {
@@ -61,8 +60,14 @@ struct KaraokeView: View {
         }
         .scrollPosition(id: $scrollTarget, anchor: UnitPoint(x: 0.5, y: 0.35))
         .onChange(of: active) { _, idx in
-            withAnimation(.spring(duration: 0.45, bounce: 0.0)) {
-                scrollTarget = idx
+            guard let idx else { return }
+            Task { @MainActor in
+                // 30ms delay: lets TextTransition initialize before scroll,
+                // avoiding transaction-animation competition
+                try? await Task.sleep(for: .milliseconds(30))
+                withAnimation(.spring(duration: 0.6, bounce: 0.15)) {
+                    scrollTarget = idx
+                }
             }
         }
     }

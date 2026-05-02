@@ -4,6 +4,13 @@ struct HumWindowView: View {
     @ObservedObject var lyricsState: LyricsState
     @ObservedObject var musicObserver: MusicObserver
 
+    private var activeLineIndex: Int? {
+        activeIndex(
+            in: lyricsState.lines,
+            at: musicObserver.playbackPosition + lyricsState.syncOffset
+        )
+    }
+
     var body: some View {
         ZStack {
             VibrancyView()
@@ -38,10 +45,10 @@ struct HumWindowView: View {
                 if !lyricsState.lines.isEmpty {
                     KaraokeView(
                         lines: lyricsState.lines,
-                        musicObserver: musicObserver,
-                        syncOffset: lyricsState.syncOffset,
+                        active: activeLineIndex,
                         fontSize: lyricsState.fontSize
                     )
+                    .equatable()
                 } else if lyricsState.noLyricsFound {
                     VStack {
                         Spacer()
