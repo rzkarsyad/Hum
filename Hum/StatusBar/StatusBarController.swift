@@ -49,6 +49,15 @@ final class StatusBarController: NSObject {
 
         menu.addItem(.separator())
 
+        let hideItem = NSMenuItem(
+            title: "Hide Lyrics",
+            action: #selector(toggleLyricsVisibility),
+            keyEquivalent: ""
+        )
+        hideItem.tag = 2
+        hideItem.target = self
+        menu.addItem(hideItem)
+
         let loginItem = NSMenuItem(
             title: "Launch at Login",
             action: #selector(toggleLaunchAtLogin(_:)),
@@ -78,6 +87,10 @@ final class StatusBarController: NSObject {
         item.state = LaunchAtLoginManager.isEnabled ? .on : .off
     }
 
+    @objc private func toggleLyricsVisibility() {
+        lyricsState.isManuallyHidden = !lyricsState.isManuallyHidden
+    }
+
     private func observe() {
         musicObserver.$currentTrack
             .removeDuplicates()
@@ -88,22 +101,28 @@ final class StatusBarController: NSObject {
             }
             .store(in: &cancellables)
 
-        Publishers.CombineLatest(musicObserver.$isPlaying, lyricsState.$lines)
-            .sink { [weak self] isPlaying, lines in
+        Publishers.CombineLatest3(musicObserver.$isPlaying, lyricsState.$lines, lyricsState.$isManuallyHidden)
+            .sink { [weak self] isPlaying, lines, isHidden in
                 guard let self else { return }
-                if isPlaying && !lines.isEmpty {
+                if isPlaying && !lines.isEmpty && !isHidden {
                     self.windowManager.show()
                 } else {
                     self.windowManager.hide()
                 }
             }
             .store(in: &cancellables)
+
+        lyricsState.$isManuallyHidden
+            .sink { [weak self] isHidden in
+                self?.statusItem.menu?.item(withTag: 2)?.title = isHidden ? "Show Lyrics" : "Hide Lyrics"
+            }
+            .store(in: &cancellables)
     }
 
     private func handleTrackChange(_ track: Track?) async {
         guard let track else { lyricsState.lines = []; return }
-        // Reset sync offset for the new track
         lyricsState.syncOffset = 0
+        lyricsState.isManuallyHidden = false
         if let stepper = statusItem.menu?.item(at: 1)?.view as? NSStepper {
             stepper.doubleValue = 0
         }
