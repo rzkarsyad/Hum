@@ -29,7 +29,7 @@ final class MusicObserver: ObservableObject {
         switch parts.first {
         case "playing" where parts.count == 5:
             let track = Track(title: parts[1], artist: parts[2], album: parts[3])
-            let position = TimeInterval(parts[4]) ?? 0
+            let position = TimeInterval(parts[4].replacingOccurrences(of: ",", with: ".")) ?? 0
             if currentTrack != track { currentTrack = track }
             playbackPosition = position
             isPlaying = true
