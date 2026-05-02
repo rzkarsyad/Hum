@@ -14,8 +14,18 @@ struct KaraokeView: View {
     @ObservedObject var musicObserver: MusicObserver
     let syncOffset: TimeInterval
 
+    private var adjustedPosition: TimeInterval {
+        musicObserver.playbackPosition + syncOffset
+    }
+
     private var active: Int? {
-        activeIndex(in: lines, at: musicObserver.playbackPosition + syncOffset)
+        activeIndex(in: lines, at: adjustedPosition)
+    }
+
+    private func words(for index: Int) -> [WordToken] {
+        let line = lines[index]
+        let next = index + 1 < lines.count ? lines[index + 1].timestamp : nil
+        return wordTokens(for: line, nextTimestamp: next)
     }
 
     var body: some View {
@@ -23,28 +33,20 @@ struct KaraokeView: View {
             ScrollView(.vertical, showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 10) {
                     ForEach(Array(lines.enumerated()), id: \.offset) { index, line in
-                        ZStack(alignment: .leading) {
-                            // Base layer — always present, fades out when this line is active
-                            Text(line.text)
-                                .font(index == active ? .title3.bold() : .callout)
-                                .foregroundColor(.white)
-                                .opacity(index == active ? 0.0 : 0.3)
-                                .animation(.easeOut(duration: 0.2), value: index == active)
-                                .multilineTextAlignment(.leading)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-
-                            // Active layer — animates in with per-glyph TextTransition
+                        Group {
                             if index == active {
+                                WordFlowView(
+                                    words: words(for: index),
+                                    playbackPosition: adjustedPosition
+                                )
+                                .transition(.opacity.animation(.easeIn(duration: 0.15)))
+                            } else {
                                 Text(line.text)
-                                    .customAttribute(EmphasisAttribute())
-                                    .font(.title3.bold())
+                                    .font(.callout)
                                     .foregroundColor(.white)
+                                    .opacity(0.3)
                                     .multilineTextAlignment(.leading)
                                     .frame(maxWidth: .infinity, alignment: .leading)
-                                    .transition(.asymmetric(
-                                        insertion: AnyTransition(TextTransition()),
-                                        removal: .opacity.animation(.easeOut(duration: 0.15))
-                                    ))
                             }
                         }
                         .padding(.horizontal, 16)
