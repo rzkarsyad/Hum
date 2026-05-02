@@ -14,13 +14,16 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.rzkarsyad.Hum
         SWIFT_VERSION: "5.9"
         INFOPLIST_FILE: Hum/Info.plist
-        CODE_SIGNING_ALLOWED: "NO"
+        CODE_SIGN_IDENTITY: "-"
+        CODE_SIGN_STYLE: Manual
     entitlements:
       path: Hum/Hum.entitlements
       properties:
         com.apple.security.app-sandbox: false
         com.apple.security.automation.apple-events: true
         com.apple.security.network.client: true
+    dependencies:
+      - sdk: ServiceManagement.framework
   HumTests:
     type: bundle.unit-test
     platform: macOS

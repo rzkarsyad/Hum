@@ -22,6 +22,7 @@
 		AE1F6D945F3B9A0D5C4E23A5 /* MusicKitSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C6DEEF97E3EE48899162178 /* MusicKitSource.swift */; };
 		B0E853F2E9288BB80F290DE7 /* VibrancyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C22D0DE0673DBB1DFE8B2526 /* VibrancyView.swift */; };
 		B85DE856FF6E11D5B6415F88 /* LyricsEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38362647FCBE534810B8B1C0 /* LyricsEngine.swift */; };
+		CDEF50E7484DB8D7C7AD0847 /* ServiceManagement.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5C49C27855409B5B8BC9469A /* ServiceManagement.framework */; };
 		D3893A676538A199EC320E5C /* LyricsEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D44CE1050F87B8208EFC257 /* LyricsEngineTests.swift */; };
 		E514F87B833CB34FA1FD48B0 /* LyricsSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 48DFFF1FE0888B369CE5B7EB /* LyricsSource.swift */; };
 		EAA8DEF6D4061CC44E1888C9 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0C31C7A317E4237D5DE93CD /* AppDelegate.swift */; };
@@ -46,6 +47,7 @@
 		428B1C62425E2625F3517FF9 /* KaraokeActiveLineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KaraokeActiveLineTests.swift; sourceTree = "<group>"; };
 		48DFFF1FE0888B369CE5B7EB /* LyricsSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LyricsSource.swift; sourceTree = "<group>"; };
 		585010E332D2C8FFD45F5DF1 /* HumTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = HumTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		5C49C27855409B5B8BC9469A /* ServiceManagement.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ServiceManagement.framework; path = System/Library/Frameworks/ServiceManagement.framework; sourceTree = SDKROOT; };
 		6D44CE1050F87B8208EFC257 /* LyricsEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LyricsEngineTests.swift; sourceTree = "<group>"; };
 		6FBCFF9AD6EF5660A3B48A2E /* Hum.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Hum.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		7C6DEEF97E3EE48899162178 /* MusicKitSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MusicKitSource.swift; sourceTree = "<group>"; };
@@ -64,7 +66,26 @@
 		E601D5E2E43A0D85F16CCF98 /* Track.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Track.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
+/* Begin PBXFrameworksBuildPhase section */
+		31732D4388B4C377D3577FA7 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				CDEF50E7484DB8D7C7AD0847 /* ServiceManagement.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
 /* Begin PBXGroup section */
+		06D2708A8F0D2023256DE12B /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				5C49C27855409B5B8BC9469A /* ServiceManagement.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		07A6A6AD08CFB98CC994D668 /* HumTests */ = {
 			isa = PBXGroup;
 			children = (
@@ -80,6 +101,7 @@
 			children = (
 				E3D639DD770D947D5D601C43 /* Hum */,
 				07A6A6AD08CFB98CC994D668 /* HumTests */,
+				06D2708A8F0D2023256DE12B /* Frameworks */,
 				F445627DA0DD0026192EE98F /* Products */,
 			);
 			sourceTree = "<group>";
@@ -192,6 +214,7 @@
 			buildConfigurationList = 92C18D51EB8F9D9623001665 /* Build configuration list for PBXNativeTarget "Hum" */;
 			buildPhases = (
 				AB99A45A5E8C58A9FB291B3E /* Sources */,
+				31732D4388B4C377D3577FA7 /* Frameworks */,
 			);
 			buildRules = (
 			);
@@ -213,6 +236,9 @@
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 1430;
 				TargetAttributes = {
+					F8ABEF288E9CC1E1D1881F9F = {
+						ProvisioningStyle = Manual;
+					};
 				};
 			};
 			buildConfigurationList = 11BD23F4FB89262B2E09EB4F /* Build configuration list for PBXProject "Hum" */;
@@ -303,8 +329,9 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CODE_SIGNING_ALLOWED = NO;
 				CODE_SIGN_ENTITLEMENTS = Hum/Hum.entitlements;
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
 				INFOPLIST_FILE = Hum/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -321,8 +348,9 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CODE_SIGNING_ALLOWED = NO;
 				CODE_SIGN_ENTITLEMENTS = Hum/Hum.entitlements;
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
 				INFOPLIST_FILE = Hum/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
