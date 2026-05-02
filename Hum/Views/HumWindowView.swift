@@ -30,6 +30,15 @@ struct HumWindowView: View {
                     }
                     Spacer()
                     Button {
+                        lyricsState.isMinimized.toggle()
+                    } label: {
+                        Image(systemName: lyricsState.isMinimized ? "chevron.down.circle" : "chevron.up.circle")
+                            .foregroundColor(.white.opacity(0.6))
+                            .font(.system(size: 14))
+                    }
+                    .buttonStyle(.plain)
+
+                    Button {
                         lyricsState.isManuallyHidden = true
                     } label: {
                         Image(systemName: "eye.slash")

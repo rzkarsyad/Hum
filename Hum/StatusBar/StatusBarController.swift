@@ -163,6 +163,13 @@ final class StatusBarController: NSObject {
                 self?.statusItem.menu?.item(withTag: 2)?.title = isHidden ? "Show Lyrics" : "Hide Lyrics"
             }
             .store(in: &cancellables)
+
+        lyricsState.$isMinimized
+            .sink { [weak self] isMinimized in
+                guard let self else { return }
+                self.windowManager.setMinimized(isMinimized)
+            }
+            .store(in: &cancellables)
     }
 
     private func handleTrackChange(_ track: Track?) async {

@@ -10,4 +10,5 @@ final class LyricsState: ObservableObject {
         let stored = UserDefaults.standard.double(forKey: "humFontSize")
         return stored >= 12 ? CGFloat(stored) : 20
     }()
+    @Published var isMinimized: Bool = false
 }

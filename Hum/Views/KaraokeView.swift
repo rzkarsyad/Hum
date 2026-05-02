@@ -58,14 +58,14 @@ struct KaraokeView: View, Equatable {
             .scrollTargetLayout()
             .padding(.vertical, 24)
         }
-        .scrollPosition(id: $scrollTarget, anchor: UnitPoint(x: 0.5, y: 0.35))
+        .scrollPosition(id: $scrollTarget, anchor: .center)
         .onChange(of: active) { _, idx in
             guard let idx else { return }
             Task { @MainActor in
                 // 30ms delay: lets TextTransition initialize before scroll,
                 // avoiding transaction-animation competition
                 try? await Task.sleep(for: .milliseconds(30))
-                withAnimation(.spring(duration: 0.6, bounce: 0.15)) {
+                withAnimation(.spring(response: 0.4, dampingFraction: 0.85)) {
                     scrollTarget = idx
                 }
             }
