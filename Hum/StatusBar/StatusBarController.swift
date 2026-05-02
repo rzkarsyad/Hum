@@ -101,10 +101,14 @@ final class StatusBarController: NSObject {
             }
             .store(in: &cancellables)
 
-        Publishers.CombineLatest3(musicObserver.$isPlaying, lyricsState.$lines, lyricsState.$isManuallyHidden)
-            .sink { [weak self] isPlaying, lines, isHidden in
+        let hasContentPublisher = lyricsState.$lines
+            .combineLatest(lyricsState.$noLyricsFound)
+            .map { lines, noLyrics in !lines.isEmpty || noLyrics }
+
+        Publishers.CombineLatest3(musicObserver.$isPlaying, hasContentPublisher, lyricsState.$isManuallyHidden)
+            .sink { [weak self] isPlaying, hasContent, isHidden in
                 guard let self else { return }
-                if isPlaying && !lines.isEmpty && !isHidden {
+                if isPlaying && hasContent && !isHidden {
                     self.windowManager.show()
                 } else {
                     self.windowManager.hide()
@@ -120,8 +124,13 @@ final class StatusBarController: NSObject {
     }
 
     private func handleTrackChange(_ track: Track?) async {
-        guard let track else { lyricsState.lines = []; return }
+        guard let track else {
+            lyricsState.lines = []
+            lyricsState.noLyricsFound = false
+            return
+        }
         lyricsState.syncOffset = 0
+        lyricsState.noLyricsFound = false
         lyricsState.isManuallyHidden = false
         if let stepper = statusItem.menu?.item(at: 1)?.view as? NSStepper {
             stepper.doubleValue = 0
@@ -130,5 +139,6 @@ final class StatusBarController: NSObject {
         let lines = await lyricsEngine.fetch(for: track)
         guard !Task.isCancelled else { return }
         lyricsState.lines = lines
+        lyricsState.noLyricsFound = lines.isEmpty
     }
 }

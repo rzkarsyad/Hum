@@ -2,18 +2,31 @@ import Foundation
 
 struct LRCLIBSource: LyricsSource {
     func fetchSyncedLyrics(for track: Track) async -> String? {
+        // Try with full info (title + artist + album)
+        if let result = await request(title: track.title, artist: track.artist, album: track.album),
+           !result.isEmpty {
+            return result
+        }
+        // Fallback: try without album name
+        return await request(title: track.title, artist: track.artist, album: nil)
+    }
+
+    private func request(title: String, artist: String, album: String?) async -> String? {
         var components = URLComponents(string: "https://lrclib.net/api/get")!
-        components.queryItems = [
-            URLQueryItem(name: "track_name", value: track.title),
-            URLQueryItem(name: "artist_name", value: track.artist),
-            URLQueryItem(name: "album_name", value: track.album)
+        var queryItems = [
+            URLQueryItem(name: "track_name", value: title),
+            URLQueryItem(name: "artist_name", value: artist)
         ]
+        if let album = album {
+            queryItems.append(URLQueryItem(name: "album_name", value: album))
+        }
+        components.queryItems = queryItems
         guard let url = components.url else { return nil }
 
-        var request = URLRequest(url: url, timeoutInterval: 10)
-        request.setValue("Hum macOS app", forHTTPHeaderField: "User-Agent")
+        var req = URLRequest(url: url, timeoutInterval: 10)
+        req.setValue("Hum macOS app", forHTTPHeaderField: "User-Agent")
 
-        guard let (data, response) = try? await URLSession.shared.data(for: request),
+        guard let (data, response) = try? await URLSession.shared.data(for: req),
               let http = response as? HTTPURLResponse,
               http.statusCode == 200,
               let json = try? JSONDecoder().decode(LRCLIBResponse.self, from: data) else { return nil }
