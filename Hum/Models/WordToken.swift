@@ -10,9 +10,15 @@ func wordTokens(for line: LyricLine, nextTimestamp: TimeInterval?) -> [WordToken
     guard !words.isEmpty else { return [] }
 
     let duration = nextTimestamp.map { max(0.1, $0 - line.timestamp) } ?? 5.0
+    let startOffset = duration * 0.1
+    let effectiveDuration = duration * 0.8
+    let totalChars = words.reduce(0) { $0 + $1.count }
+    guard totalChars > 0 else { return [] }
 
-    return words.enumerated().map { index, word in
-        let t = line.timestamp + TimeInterval(index) / TimeInterval(words.count) * duration
+    var cumulative = 0
+    return words.map { word in
+        let t = line.timestamp + startOffset + (Double(cumulative) / Double(totalChars)) * effectiveDuration
+        cumulative += word.count
         return WordToken(text: word, timestamp: t)
     }
 }
