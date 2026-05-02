@@ -27,6 +27,7 @@
 		D886F7732E00529EFF708969 /* LaunchAtLoginManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E202062A8DF5CE5EB2B9CBE /* LaunchAtLoginManager.swift */; };
 		E514F87B833CB34FA1FD48B0 /* LyricsSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 48DFFF1FE0888B369CE5B7EB /* LyricsSource.swift */; };
 		EAA8DEF6D4061CC44E1888C9 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0C31C7A317E4237D5DE93CD /* AppDelegate.swift */; };
+		EFF6FF0369A31AE301974E23 /* TextEffects.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27213DFD0CB49B1CF95DBF15 /* TextEffects.swift */; };
 		F16A62F33C59ECBA69AF08BA /* LyricLine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34C6BB3B2A86D18BCD2C611A /* LyricLine.swift */; };
 /* End PBXBuildFile section */
 
@@ -42,6 +43,7 @@
 
 /* Begin PBXFileReference section */
 		0E14791D9D57FCBD47D2B5E7 /* WindowManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowManager.swift; sourceTree = "<group>"; };
+		27213DFD0CB49B1CF95DBF15 /* TextEffects.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextEffects.swift; sourceTree = "<group>"; };
 		2C14D1E028C9F4D214BCB7BF /* KaraokeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KaraokeView.swift; sourceTree = "<group>"; };
 		34C6BB3B2A86D18BCD2C611A /* LyricLine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LyricLine.swift; sourceTree = "<group>"; };
 		38362647FCBE534810B8B1C0 /* LyricsEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LyricsEngine.swift; sourceTree = "<group>"; };
@@ -129,6 +131,7 @@
 			children = (
 				A17EBBBAF45516CDD6A330FB /* HumWindowView.swift */,
 				2C14D1E028C9F4D214BCB7BF /* KaraokeView.swift */,
+				27213DFD0CB49B1CF95DBF15 /* TextEffects.swift */,
 				C22D0DE0673DBB1DFE8B2526 /* VibrancyView.swift */,
 			);
 			path = Views;
@@ -301,6 +304,7 @@
 				AE1F6D945F3B9A0D5C4E23A5 /* MusicKitSource.swift in Sources */,
 				AE1F4549E08AEF9E64924879 /* MusicObserver.swift in Sources */,
 				829B21E9146EC21C2A69D708 /* StatusBarController.swift in Sources */,
+				EFF6FF0369A31AE301974E23 /* TextEffects.swift in Sources */,
 				7305DA28DA374F62C73D2887 /* Track.swift in Sources */,
 				B0E853F2E9288BB80F290DE7 /* VibrancyView.swift in Sources */,
 				139F872723D69437A2ADC3BF /* WindowManager.swift in Sources */,
