@@ -23,20 +23,52 @@ struct AppearanceEffectRenderer: TextRenderer, Animatable {
     }
 
     func draw(layout: Text.Layout, in context: inout GraphicsContext) {
-        for run in layout.flattenedRuns {
-            if run[EmphasisAttribute.self] != nil {
-                let delay = elementDelay(count: run.count)
-                for (index, slice) in run.enumerated() {
-                    let timeOffset = TimeInterval(index) * delay
-                    let elementTime = max(0, min(elapsedTime - timeOffset, elementDuration))
+        let layoutLines = Array(layout)
+
+        // Count emphasized chars per visual line
+        let charsPerLine: [Int] = layoutLines.map { line in
+            line.reduce(0) { $0 + ($1[EmphasisAttribute.self] != nil ? $1.count : 0) }
+        }
+        let nonEmptyCount = charsPerLine.filter { $0 > 0 }.count
+        let perLineDuration = nonEmptyCount > 0
+            ? totalDuration / TimeInterval(nonEmptyCount)
+            : totalDuration
+
+        var lineStartTime: TimeInterval = 0
+
+        for (i, line) in layoutLines.enumerated() {
+            let lineChars = charsPerLine[i]
+
+            if lineChars == 0 {
+                for run in line {
                     var copy = context
-                    draw(slice, at: elementTime, in: &copy)
+                    copy.opacity = UnitCurve.easeIn.value(at: elapsedTime / 0.2)
+                    copy.draw(run)
                 }
-            } else {
-                var copy = context
-                copy.opacity = UnitCurve.easeIn.value(at: elapsedTime / 0.2)
-                copy.draw(run)
+                continue
             }
+
+            let lineElapsed = max(0, elapsedTime - lineStartTime)
+            let stagger = delay(count: lineChars, duration: perLineDuration)
+
+            var charIdx = 0
+            for run in line {
+                if run[EmphasisAttribute.self] != nil {
+                    for slice in run {
+                        let timeOffset = TimeInterval(charIdx) * stagger
+                        let elementTime = max(0, min(lineElapsed - timeOffset, elementDuration))
+                        var copy = context
+                        draw(slice, at: elementTime, in: &copy)
+                        charIdx += 1
+                    }
+                } else {
+                    var copy = context
+                    copy.opacity = UnitCurve.easeIn.value(at: lineElapsed / 0.2)
+                    copy.draw(run)
+                }
+            }
+
+            lineStartTime += perLineDuration
         }
     }
 
@@ -57,10 +89,10 @@ struct AppearanceEffectRenderer: TextRenderer, Animatable {
         context.draw(slice, options: .disablesSubpixelQuantization)
     }
 
-    func elementDelay(count: Int) -> TimeInterval {
+    private func delay(count: Int, duration: TimeInterval) -> TimeInterval {
         let count = TimeInterval(count)
-        let remainingTime = totalDuration - count * elementDuration
-        return max(remainingTime / (count + 1), (totalDuration - elementDuration) / count)
+        let remaining = duration - count * elementDuration
+        return max(remaining / (count + 1), (duration - elementDuration) / count)
     }
 }
 
