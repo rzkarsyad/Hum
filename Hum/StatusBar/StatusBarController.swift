@@ -48,6 +48,17 @@ final class StatusBarController: NSObject {
         menu.addItem(stepperItem)
 
         menu.addItem(.separator())
+
+        let loginItem = NSMenuItem(
+            title: "Launch at Login",
+            action: #selector(toggleLaunchAtLogin(_:)),
+            keyEquivalent: ""
+        )
+        loginItem.state = LaunchAtLoginManager.isEnabled ? .on : .off
+        loginItem.target = self
+        menu.addItem(loginItem)
+
+        menu.addItem(.separator())
         menu.addItem(
             NSMenuItem(title: "Quit Hum", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
         )
@@ -60,6 +71,11 @@ final class StatusBarController: NSObject {
         let val = stepper.doubleValue
         let sign = val >= 0 ? "+" : ""
         statusItem.menu?.item(withTag: 1)?.title = "Sync Offset: \(sign)\(val)s"
+    }
+
+    @objc private func toggleLaunchAtLogin(_ item: NSMenuItem) {
+        LaunchAtLoginManager.setEnabled(!LaunchAtLoginManager.isEnabled)
+        item.state = LaunchAtLoginManager.isEnabled ? .on : .off
     }
 
     private func observe() {
