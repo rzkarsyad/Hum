@@ -58,11 +58,17 @@ final class MusicObserver: ObservableObject {
         end tell
         """
 
+    private lazy var compiledScript: NSAppleScript? = {
+        var error: NSDictionary?
+        let script = NSAppleScript(source: pollScript)
+        script?.compileAndReturnError(&error)
+        return error == nil ? script : nil
+    }()
+
     private func runAppleScript(_ source: String) -> String? {
         var error: NSDictionary?
-        guard let script = NSAppleScript(source: source) else { return nil }
-        let result = script.executeAndReturnError(&error)
+        let result = compiledScript?.executeAndReturnError(&error)
         guard error == nil else { return nil }
-        return result.stringValue
+        return result?.stringValue
     }
 }
