@@ -2,7 +2,7 @@ name: Hum
 options:
   bundleIdPrefix: com.rzkarsyad
   deploymentTarget:
-    macOS: "13.0"
+    macOS: "15.0"
 targets:
   Hum:
     type: application
@@ -33,6 +33,6 @@ targets:
       - target: Hum
     settings:
       base:
-        MACOSX_DEPLOYMENT_TARGET: "13.0"
+        MACOSX_DEPLOYMENT_TARGET: "15.0"
         SWIFT_VERSION: "5.9"
         CODE_SIGNING_ALLOWED: "NO"
