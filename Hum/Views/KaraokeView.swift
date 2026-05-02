@@ -13,6 +13,7 @@ struct KaraokeView: View {
     let lines: [LyricLine]
     @ObservedObject var musicObserver: MusicObserver
     let syncOffset: TimeInterval
+    let fontSize: CGFloat
 
     private var active: Int? {
         activeIndex(in: lines, at: musicObserver.playbackPosition + syncOffset)
@@ -30,9 +31,8 @@ struct KaraokeView: View {
                 VStack(alignment: .leading, spacing: 10) {
                     ForEach(Array(lines.enumerated()), id: \.offset) { index, line in
                         ZStack(alignment: .leading) {
-                            // Base — always at 0.3, never hidden; text is always visible
                             Text(line.text)
-                                .font(.title2.bold())
+                                .font(.system(size: fontSize, weight: .bold))
                                 .foregroundColor(.white)
                                 .opacity(0.3)
                                 .multilineTextAlignment(.leading)
@@ -41,7 +41,7 @@ struct KaraokeView: View {
                             if index == active {
                                 Text(line.text)
                                     .customAttribute(EmphasisAttribute())
-                                    .font(.title2.bold())
+                                    .font(.system(size: fontSize, weight: .bold))
                                     .foregroundColor(.white)
                                     .multilineTextAlignment(.leading)
                                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -59,7 +59,7 @@ struct KaraokeView: View {
             }
             .onChange(of: active) { _, idx in
                 if let idx {
-                    withAnimation(.easeInOut(duration: 0.35)) {
+                    withAnimation(.spring(duration: 0.5, bounce: 0.15)) {
                         proxy.scrollTo(idx, anchor: .center)
                     }
                 }

@@ -39,7 +39,8 @@ struct HumWindowView: View {
                     KaraokeView(
                         lines: lyricsState.lines,
                         musicObserver: musicObserver,
-                        syncOffset: lyricsState.syncOffset
+                        syncOffset: lyricsState.syncOffset,
+                        fontSize: lyricsState.fontSize
                     )
                 } else if lyricsState.noLyricsFound {
                     VStack {
