@@ -35,22 +35,6 @@ final class StatusBarController: NSObject {
     private func buildMenu() {
         let menu = NSMenu()
 
-        let offsetLabel = NSMenuItem(title: "Sync Offset: +0.0s", action: nil, keyEquivalent: "")
-        offsetLabel.tag = 1
-        menu.addItem(offsetLabel)
-
-        let stepperItem = NSMenuItem()
-        let stepper = NSStepper()
-        stepper.minValue = -5
-        stepper.maxValue = 5
-        stepper.increment = 0.5
-        stepper.doubleValue = 0
-        stepper.target = self
-        stepper.action = #selector(offsetChanged(_:))
-        stepper.frame = CGRect(x: 8, y: 0, width: 100, height: 22)
-        stepperItem.view = stepper
-        menu.addItem(stepperItem)
-
         let fontSizeLabel = NSMenuItem(title: "Text Size: \(Int(lyricsState.fontSize))pt", action: nil, keyEquivalent: "")
         fontSizeLabel.tag = 4
         menu.addItem(fontSizeLabel)
@@ -103,13 +87,6 @@ final class StatusBarController: NSObject {
         )
 
         statusItem.menu = menu
-    }
-
-    @objc private func offsetChanged(_ stepper: NSStepper) {
-        lyricsState.syncOffset = stepper.doubleValue
-        let val = stepper.doubleValue
-        let sign = val >= 0 ? "+" : ""
-        statusItem.menu?.item(withTag: 1)?.title = "Sync Offset: \(sign)\(val)s"
     }
 
     @objc private func fontSizeChanged(_ stepper: NSStepper) {
@@ -178,15 +155,10 @@ final class StatusBarController: NSObject {
             lyricsState.noLyricsFound = false
             return
         }
-        lyricsState.syncOffset = 0
         lyricsState.noLyricsFound = false
         if autoShowOnNewTrack {
             lyricsState.isManuallyHidden = false
         }
-        if let stepper = statusItem.menu?.item(at: 1)?.view as? NSStepper {
-            stepper.doubleValue = 0
-        }
-        statusItem.menu?.item(withTag: 1)?.title = "Sync Offset: +0.0s"
         let lines = await lyricsEngine.fetch(for: track)
         guard !Task.isCancelled else { return }
         lyricsState.lines = lines
