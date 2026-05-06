@@ -5,10 +5,7 @@ struct HumWindowView: View {
     @ObservedObject var musicObserver: MusicObserver
 
     private var activeLineIndex: Int? {
-        activeIndex(
-            in: lyricsState.lines,
-            at: musicObserver.playbackPosition + lyricsState.syncOffset
-        )
+        activeIndex(in: lyricsState.lines, at: musicObserver.playbackPosition)
     }
 
     var body: some View {
