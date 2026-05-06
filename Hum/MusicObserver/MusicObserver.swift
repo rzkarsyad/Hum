@@ -66,6 +66,7 @@ final class MusicObserver: ObservableObject {
             currentTrack = nil
             playbackPosition = 0
             basePosition = 0
+            baseDate = prePollDate
         }
     }
 
