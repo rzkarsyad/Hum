@@ -1,6 +1,10 @@
 import AppKit
 import Combine
 
+func isSeek(reported: TimeInterval, interpolated: TimeInterval) -> Bool {
+    abs(reported - interpolated) > 1.5
+}
+
 @MainActor
 final class MusicObserver: ObservableObject {
     @Published private(set) var currentTrack: Track? = nil
@@ -34,6 +38,7 @@ final class MusicObserver: ObservableObject {
     }
 
     private func poll() {
+        let prePollDate = Date()
         guard let result = runAppleScript(pollScript) else { return }
         let parts = result.components(separatedBy: "\t")
 
@@ -47,9 +52,12 @@ final class MusicObserver: ObservableObject {
             )
             let position = TimeInterval(parts[4].replacingOccurrences(of: ",", with: ".")) ?? 0
             if currentTrack != track { currentTrack = track }
+            let interpolated = basePosition + prePollDate.timeIntervalSince(baseDate)
+            if isSeek(reported: position, interpolated: interpolated) {
+                playbackPosition = position
+            }
             basePosition = position
-            baseDate = Date()
-            playbackPosition = position
+            baseDate = prePollDate
             isPlaying = true
         case "paused":
             isPlaying = false
