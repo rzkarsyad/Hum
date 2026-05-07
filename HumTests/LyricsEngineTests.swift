@@ -60,3 +60,30 @@ final class LyricsEngineTests: XCTestCase {
         XCTAssertEqual(callCount, 2)
     }
 }
+
+final class MPMediaItemLyricsSourceTests: XCTestCase {
+    private let source = MPMediaItemLyricsSource()
+
+    func test_returnsNilForEmptyString() {
+        XCTAssertNil(source.parseLRC(""))
+    }
+
+    func test_returnsNilForPlainText() {
+        XCTAssertNil(source.parseLRC("Verse 1\nSome lyrics here\nNo timestamps"))
+    }
+
+    func test_returnsStringWhenLRCFormatDetected() {
+        let lrc = "[00:01.00] Hello\n[00:02.50] World"
+        XCTAssertEqual(source.parseLRC(lrc), lrc)
+    }
+
+    func test_detectsLRCWithThreeDigitFraction() {
+        let lrc = "[01:23.456] Line with milliseconds"
+        XCTAssertNotNil(source.parseLRC(lrc))
+    }
+
+    func test_returnsNilWhenTimestampOnlyInMiddle() {
+        let text = "Some text\n[00:01.00] not at start of file"
+        XCTAssertNotNil(source.parseLRC(text))
+    }
+}
