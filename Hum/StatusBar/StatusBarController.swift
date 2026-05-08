@@ -155,6 +155,7 @@ final class StatusBarController: NSObject {
             lyricsState.noLyricsFound = false
             return
         }
+        lyricsState.lines = []
         lyricsState.noLyricsFound = false
         if autoShowOnNewTrack {
             lyricsState.isManuallyHidden = false
