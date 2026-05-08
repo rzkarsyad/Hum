@@ -104,8 +104,8 @@ final class MPMediaItemLyricsSourceTests: XCTestCase {
         XCTAssertNotNil(source.parseLRC(lrc))
     }
 
-    func test_returnsNilWhenTimestampOnlyInMiddle() {
-        let text = "Some text\n[00:01.00] not at start of file"
+    func test_returnsNotNilWhenTimestampAtLineStart() {
+        let text = "Some text\n[00:01.00] timestamp at start of second line"
         XCTAssertNotNil(source.parseLRC(text))
     }
 }
