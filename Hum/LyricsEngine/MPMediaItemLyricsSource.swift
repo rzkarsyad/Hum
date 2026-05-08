@@ -1,5 +1,8 @@
 import Foundation
 
+// MPMediaItem is unavailable on macOS (iOS-only API), so this source cannot be wired
+// directly to a media item. fetchSyncedLyricsFromRaw is kept for future use if a raw
+// LRC string becomes available from another local source (e.g. file metadata).
 struct MPMediaItemLyricsSource {
     private static let lrcLineRegex: NSRegularExpression = {
         try! NSRegularExpression(pattern: #"^\[\d{1,3}:\d{2}\.\d{2,3}\]"#, options: .anchorsMatchLines)
