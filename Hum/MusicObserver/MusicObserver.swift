@@ -10,11 +10,13 @@ final class MusicObserver: ObservableObject {
     @Published private(set) var currentTrack: Track? = nil
     @Published private(set) var playbackPosition: TimeInterval = 0
     @Published private(set) var isPlaying: Bool = false
+    @Published private(set) var currentArtwork: NSImage? = nil
 
     private var pollTimer: Timer?
     private var displayTimer: Timer?
     private var basePosition: TimeInterval = 0
     private var baseDate: Date = Date()
+    private let artworkQueue = DispatchQueue(label: "com.hum.artwork", qos: .utility)
 
     func start() {
         // Poll Apple Music every 500ms for track/state/position anchor
@@ -51,7 +53,10 @@ final class MusicObserver: ObservableObject {
                 duration: TimeInterval(parts[5].replacingOccurrences(of: ",", with: "."))
             )
             let position = TimeInterval(parts[4].replacingOccurrences(of: ",", with: ".")) ?? 0
-            if currentTrack != track { currentTrack = track }
+            if currentTrack != track {
+                fetchArtwork()
+                currentTrack = track
+            }
             let interpolated = basePosition + prePollDate.timeIntervalSince(baseDate)
             if isSeek(reported: position, interpolated: interpolated) {
                 playbackPosition = position
@@ -64,6 +69,7 @@ final class MusicObserver: ObservableObject {
         default:
             isPlaying = false
             currentTrack = nil
+            currentArtwork = nil
             playbackPosition = 0
             basePosition = 0
             baseDate = prePollDate
@@ -104,5 +110,39 @@ final class MusicObserver: ObservableObject {
         let result = compiledScript?.executeAndReturnError(&error)
         guard error == nil else { return nil }
         return result?.stringValue
+    }
+
+    private func fetchArtwork() {
+        artworkQueue.async {
+            let image = Self.fetchArtworkSync()
+            Task { @MainActor [weak self] in
+                self?.currentArtwork = image
+            }
+        }
+    }
+
+    private static func fetchArtworkSync() -> NSImage? {
+        let source = """
+            tell application "System Events"
+                if not (exists process "Music") then return ""
+            end tell
+            tell application "Music"
+                if player state is playing then
+                    try
+                        return raw data of artwork 1 of current track
+                    end try
+                end if
+            end tell
+            """
+        var compileErr: NSDictionary?
+        let script = NSAppleScript(source: source)
+        script?.compileAndReturnError(&compileErr)
+        guard compileErr == nil else { return nil }
+        var execErr: NSDictionary?
+        let desc = script?.executeAndReturnError(&execErr)
+        guard execErr == nil,
+              let data = desc?.data,
+              !data.isEmpty else { return nil }
+        return NSImage(data: data)
     }
 }
