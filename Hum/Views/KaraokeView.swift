@@ -61,6 +61,7 @@ struct KaraokeView: View, Equatable {
                             .id(index)
                         }
                     }
+                    .padding(.top, 12)
                     .padding(.bottom, vertPad)
                 }
                 .onAppear {
