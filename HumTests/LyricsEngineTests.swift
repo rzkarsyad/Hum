@@ -59,6 +59,28 @@ final class LyricsEngineTests: XCTestCase {
         _ = await engine.fetch(for: Track(title: "X", artist: "Y", album: "Z"))
         XCTAssertEqual(callCount, 2)
     }
+
+    func test_usesMediaItemLyricsWhenProvided() async {
+        let lrc = "[00:01.00] From device\n[00:02.00] Library"
+        let engine = LyricsEngine(primary: MockSource(result: nil), fallback: MockSource(result: nil))
+        let lines = await engine.fetch(for: track, mediaItemLyrics: lrc)
+        XCTAssertEqual(lines.count, 2)
+        XCTAssertEqual(lines[0].text, "From device")
+    }
+
+    func test_fallsBackToSourcesWhenMediaItemLyricsNil() async {
+        let engine = LyricsEngine(primary: MockSource(result: nil), fallback: MockSource(result: sampleLRC))
+        let lines = await engine.fetch(for: track, mediaItemLyrics: nil)
+        XCTAssertEqual(lines.count, 2)
+    }
+
+    func test_mediaItemLyricsTakesPrecedenceOverPrimary() async {
+        let fromDevice = "[00:01.00] Device line"
+        let fromNetwork = "[00:01.00] Network line"
+        let engine = LyricsEngine(primary: MockSource(result: fromNetwork), fallback: MockSource(result: nil))
+        let lines = await engine.fetch(for: track, mediaItemLyrics: fromDevice)
+        XCTAssertEqual(lines[0].text, "Device line")
+    }
 }
 
 final class MPMediaItemLyricsSourceTests: XCTestCase {
