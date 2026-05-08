@@ -121,7 +121,7 @@ final class MusicObserver: ObservableObject {
         }
     }
 
-    private static func fetchArtworkSync() -> NSImage? {
+    private nonisolated static func fetchArtworkSync() -> NSImage? {
         let source = """
             tell application "System Events"
                 if not (exists process "Music") then return ""
