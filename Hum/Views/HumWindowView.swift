@@ -12,7 +12,8 @@ struct HumWindowView: View {
         ZStack {
             VibrancyView()
             VStack(spacing: 0) {
-                HStack(alignment: .top) {
+                HStack(alignment: .center, spacing: 10) {
+                    artworkView
                     VStack(alignment: .leading, spacing: 2) {
                         Text(musicObserver.currentTrack?.title ?? "")
                             .font(.subheadline.bold())
@@ -46,7 +47,7 @@ struct HumWindowView: View {
                 }
                 .padding(.horizontal, 12)
                 .padding(.vertical, 10)
-                .frame(height: 52)
+                .frame(height: 60)
 
                 if !lyricsState.lines.isEmpty {
                     KaraokeView(
@@ -70,5 +71,25 @@ struct HumWindowView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .clipShape(RoundedRectangle(cornerRadius: 16))
+    }
+
+    @ViewBuilder
+    private var artworkView: some View {
+        Group {
+            if let artwork = musicObserver.currentArtwork {
+                Image(nsImage: artwork)
+                    .resizable()
+                    .scaledToFill()
+            } else {
+                Image(systemName: "music.note")
+                    .foregroundColor(.white.opacity(0.5))
+                    .font(.system(size: 16))
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(Color.white.opacity(0.1))
+            }
+        }
+        .frame(width: 40, height: 40)
+        .clipShape(RoundedRectangle(cornerRadius: 6))
+        .animation(.easeInOut(duration: 0.2), value: musicObserver.currentArtwork != nil)
     }
 }
