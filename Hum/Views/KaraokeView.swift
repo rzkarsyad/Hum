@@ -63,7 +63,6 @@ struct KaraokeView: View, Equatable {
                     }
                     .padding(.top, 0)
                     .padding(.bottom, vertPad)
-                    .animation(.interpolatingSpring(stiffness: 70, damping: 12), value: active)
                 }
                 .onAppear {
                     if let a = active {
