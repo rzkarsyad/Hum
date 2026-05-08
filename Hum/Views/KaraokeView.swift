@@ -29,39 +29,55 @@ struct KaraokeView: View, Equatable {
 
     var body: some View {
         GeometryReader { geo in
-            let translateY: CGFloat = {
-                let idx = CGFloat(active ?? 0)
-                return geo.size.height / 2 - (idx + 0.5) * lineHeight
-            }()
+            let vertPad = max(0, geo.size.height / 2 - lineHeight / 2)
+            ScrollViewReader { proxy in
+                ScrollView(.vertical, showsIndicators: false) {
+                    VStack(alignment: .leading, spacing: lineSpacing) {
+                        ForEach(Array(lines.enumerated()), id: \.offset) { index, line in
+                            ZStack(alignment: .leading) {
+                                Text(line.text)
+                                    .font(.system(size: fontSize, weight: .bold))
+                                    .foregroundColor(.white)
+                                    .opacity(0.3)
+                                    .multilineTextAlignment(.leading)
+                                    .fixedSize(horizontal: false, vertical: true)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
 
-            VStack(alignment: .leading, spacing: lineSpacing) {
-                ForEach(Array(lines.enumerated()), id: \.offset) { index, line in
-                    ZStack(alignment: .leading) {
-                        Text(line.text)
-                            .font(.system(size: fontSize, weight: .bold))
-                            .foregroundColor(.white)
-                            .opacity(0.3)
-                            .multilineTextAlignment(.leading)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-
-                        if index == active {
-                            Text(line.text)
-                                .customAttribute(EmphasisAttribute())
-                                .font(.system(size: fontSize, weight: .bold))
-                                .foregroundColor(.white)
-                                .multilineTextAlignment(.leading)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .transition(.asymmetric(
-                                    insertion: AnyTransition(TextTransition(duration: lineDuration(for: index))),
-                                    removal: .opacity.animation(.easeOut(duration: 0.15))
-                                ))
+                                if index == active {
+                                    Text(line.text)
+                                        .customAttribute(EmphasisAttribute())
+                                        .font(.system(size: fontSize, weight: .bold))
+                                        .foregroundColor(.white)
+                                        .multilineTextAlignment(.leading)
+                                        .fixedSize(horizontal: false, vertical: true)
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                        .transition(.asymmetric(
+                                            insertion: AnyTransition(TextTransition(duration: lineDuration(for: index))),
+                                            removal: .opacity.animation(.easeOut(duration: 0.15))
+                                        ))
+                                }
+                            }
+                            .padding(.horizontal, 16)
+                            .id(index)
                         }
                     }
-                    .padding(.horizontal, 16)
+                    .padding(.top, 0)
+                    .padding(.bottom, vertPad)
+                    .animation(.interpolatingSpring(stiffness: 70, damping: 12), value: active)
+                }
+                .onAppear {
+                    if let a = active {
+                        proxy.scrollTo(a, anchor: .center)
+                    }
+                }
+                .onChange(of: active) { newActive in
+                    if let newActive {
+                        withAnimation(.interpolatingSpring(stiffness: 70, damping: 12)) {
+                            proxy.scrollTo(newActive, anchor: .center)
+                        }
+                    }
                 }
             }
-            .offset(y: translateY)
-            .animation(.interpolatingSpring(stiffness: 70, damping: 12), value: active)
         }
         .clipped()
     }
