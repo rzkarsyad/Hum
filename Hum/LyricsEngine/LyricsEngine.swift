@@ -10,15 +10,19 @@ final class LyricsEngine {
         self.fallback = fallback
     }
 
-    func fetch(for track: Track) async -> [LyricLine] {
+    func fetch(for track: Track, mediaItemLyrics: String? = nil) async -> [LyricLine] {
         if let cached = cache[track] { return cached }
 
-        let primaryResult = await primary.fetchSyncedLyrics(for: track)
         let lrc: String?
-        if let r = primaryResult {
-            lrc = r
+        if let fromDevice = mediaItemLyrics {
+            lrc = fromDevice
         } else {
-            lrc = await fallback.fetchSyncedLyrics(for: track)
+            let primaryResult = await primary.fetchSyncedLyrics(for: track)
+            if let r = primaryResult {
+                lrc = r
+            } else {
+                lrc = await fallback.fetchSyncedLyrics(for: track)
+            }
         }
 
         let lines = lrc.map { LRCParser.parse($0) } ?? []
