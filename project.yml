@@ -3,6 +3,10 @@ options:
   bundleIdPrefix: com.rzkarsyad
   deploymentTarget:
     macOS: "15.0"
+packages:
+  Sparkle:
+    url: https://github.com/sparkle-project/Sparkle
+    from: "2.0.0"
 targets:
   Hum:
     type: application
@@ -24,6 +28,8 @@ targets:
         com.apple.security.network.client: true
     dependencies:
       - sdk: ServiceManagement.framework
+      - package: Sparkle
+        product: Sparkle
   HumTests:
     type: bundle.unit-test
     platform: macOS

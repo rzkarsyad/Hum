@@ -56,21 +56,30 @@ struct HumWindowView: View {
                         fontSize: lyricsState.fontSize
                     )
                     .equatable()
+                } else if lyricsState.networkError {
+                    emptyState(icon: "wifi.slash", message: "Can't reach lyrics server.\nCheck your internet connection.")
                 } else if lyricsState.noLyricsFound {
-                    VStack {
-                        Spacer()
-                        Text("Oops, we don't have lyrics for this one")
-                            .font(.callout)
-                            .foregroundColor(.white.opacity(0.5))
-                            .multilineTextAlignment(.center)
-                            .padding(.horizontal, 20)
-                        Spacer()
-                    }
+                    emptyState(icon: "music.note.slash", message: "No lyrics found for this track.")
                 }
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .clipShape(RoundedRectangle(cornerRadius: 16))
+    }
+
+    private func emptyState(icon: String, message: String) -> some View {
+        VStack(spacing: 10) {
+            Spacer()
+            Image(systemName: icon)
+                .font(.system(size: 28))
+                .foregroundColor(.white.opacity(0.3))
+            Text(message)
+                .font(.callout)
+                .foregroundColor(.white.opacity(0.45))
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 20)
+            Spacer()
+        }
     }
 
     @ViewBuilder
