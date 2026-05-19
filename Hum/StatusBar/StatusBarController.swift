@@ -1,5 +1,6 @@
 import AppKit
 import Combine
+import Sparkle
 
 @MainActor
 final class StatusBarController: NSObject {
@@ -10,17 +11,20 @@ final class StatusBarController: NSObject {
     private let lyricsEngine: LyricsEngine
     private let lyricsState: LyricsState
     private let windowManager: WindowManager
+    private let updater: SPUUpdater
 
     init(
         musicObserver: MusicObserver,
         lyricsEngine: LyricsEngine,
         lyricsState: LyricsState,
-        windowManager: WindowManager
+        windowManager: WindowManager,
+        updater: SPUUpdater
     ) {
         self.musicObserver = musicObserver
         self.lyricsEngine = lyricsEngine
         self.lyricsState = lyricsState
         self.windowManager = windowManager
+        self.updater = updater
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         super.init()
         statusItem.button?.image = NSImage(systemSymbolName: "music.note", accessibilityDescription: "Hum")
@@ -68,11 +72,25 @@ final class StatusBarController: NSObject {
         menu.addItem(loginItem)
 
         menu.addItem(.separator())
+
+        let checkUpdateItem = NSMenuItem(
+            title: "Check for Updates…",
+            action: #selector(checkForUpdates),
+            keyEquivalent: ""
+        )
+        checkUpdateItem.target = self
+        menu.addItem(checkUpdateItem)
+
+        menu.addItem(.separator())
         menu.addItem(
             NSMenuItem(title: "Quit Hum", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
         )
 
         statusItem.menu = menu
+    }
+
+    @objc private func checkForUpdates() {
+        updater.checkForUpdates()
     }
 
     @objc private func fontSizeChanged(_ stepper: NSStepper) {
@@ -103,7 +121,8 @@ final class StatusBarController: NSObject {
 
         let hasContentPublisher = lyricsState.$lines
             .combineLatest(lyricsState.$noLyricsFound)
-            .map { lines, noLyrics in !lines.isEmpty || noLyrics }
+            .combineLatest(lyricsState.$networkError)
+            .map { pair, networkError in !pair.0.isEmpty || pair.1 || networkError }
 
         Publishers.CombineLatest3(musicObserver.$isPlaying, hasContentPublisher, lyricsState.$isManuallyHidden)
             .sink { [weak self] isPlaying, hasContent, isHidden in
@@ -138,9 +157,16 @@ final class StatusBarController: NSObject {
         }
         lyricsState.lines = []
         lyricsState.noLyricsFound = false
-        let lines = await lyricsEngine.fetch(for: track)
+        lyricsState.networkError = false
+        let result = await lyricsEngine.fetch(for: track)
         guard !Task.isCancelled else { return }
-        lyricsState.lines = lines
-        lyricsState.noLyricsFound = lines.isEmpty
+        switch result {
+        case .found(let lines):
+            lyricsState.lines = lines
+        case .notFound:
+            lyricsState.noLyricsFound = true
+        case .networkError:
+            lyricsState.networkError = true
+        }
     }
 }

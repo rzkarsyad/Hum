@@ -20,5 +20,11 @@
     <string>1.0</string>
     <key>LSMinimumSystemVersion</key>
     <string>15.0</string>
+    <key>SUFeedURL</key>
+    <string>https://raw.githubusercontent.com/rzkarsyad/Hum/main/appcast.xml</string>
+    <key>SUPublicEDKey</key>
+    <string>grYy1Fol3uhUrSOTdeh4LVr1gRvCtOD3QmEH27Q6Rjg=</string>
+    <key>SUEnableAutomaticChecks</key>
+    <true/>
 </dict>
 </plist>

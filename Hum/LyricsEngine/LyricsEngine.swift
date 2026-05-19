@@ -1,5 +1,11 @@
 import Foundation
 
+enum LyricsFetchResult {
+    case found([LyricLine])
+    case notFound
+    case networkError
+}
+
 final class LyricsEngine {
     private let primary: any LyricsSource
     private let fallback: any LyricsSource
@@ -10,10 +16,14 @@ final class LyricsEngine {
         self.fallback = fallback
     }
 
-    func fetch(for track: Track, mediaItemLyrics: String? = nil) async -> [LyricLine] {
-        if let cached = cache[track] { return cached }
+    func fetch(for track: Track, mediaItemLyrics: String? = nil) async -> LyricsFetchResult {
+        if let cached = cache[track] {
+            return cached.isEmpty ? .notFound : .found(cached)
+        }
 
         let lrc: String?
+        var hadNetworkError = false
+
         if let fromDevice = mediaItemLyrics {
             lrc = fromDevice
         } else {
@@ -21,12 +31,19 @@ final class LyricsEngine {
             if let r = primaryResult {
                 lrc = r
             } else {
-                lrc = await fallback.fetchSyncedLyrics(for: track)
+                let fallbackResult = await (fallback as? LRCLIBSource)?.fetchSyncedLyricsWithError(for: track)
+                switch fallbackResult {
+                case .success(let s): lrc = s
+                case .failure: lrc = nil; hadNetworkError = true
+                case .none: lrc = nil
+                }
             }
         }
 
         let lines = lrc.map { LRCParser.parse($0) } ?? []
         cache[track] = lines
-        return lines
+
+        if !lines.isEmpty { return .found(lines) }
+        return hadNetworkError ? .networkError : .notFound
     }
 }
