@@ -16,19 +16,20 @@ final class MusicObserver: ObservableObject {
     private var displayTimer: Timer?
     private var basePosition: TimeInterval = 0
     private var baseDate: Date = Date()
+
+    private let pollQueue = DispatchQueue(label: "com.hum.poll", qos: .userInteractive)
     private let artworkQueue = DispatchQueue(label: "com.hum.artwork", qos: .utility)
+    private var artworkGeneration = 0
 
     func start() {
-        // Poll Apple Music every 500ms for track/state/position anchor
         let poll = Timer(timeInterval: 0.5, repeats: true) { [weak self] _ in
-            Task { @MainActor in self?.poll() }
+            Task { @MainActor [weak self] in self?.schedulePoll() }
         }
         RunLoop.main.add(poll, forMode: .common)
         pollTimer = poll
 
-        // Interpolate position at ~60fps between polls for sub-16ms accuracy
         let display = Timer(timeInterval: 1.0 / 60.0, repeats: true) { [weak self] _ in
-            Task { @MainActor in self?.interpolatePosition() }
+            Task { @MainActor [weak self] in self?.interpolatePosition() }
         }
         RunLoop.main.add(display, forMode: .common)
         displayTimer = display
@@ -39,11 +40,22 @@ final class MusicObserver: ObservableObject {
         displayTimer?.invalidate(); displayTimer = nil
     }
 
-    private func poll() {
+    // Captures main-actor state, then offloads AppleScript execution to background.
+    private func schedulePoll() {
         let prePollDate = Date()
-        guard let result = runAppleScript(pollScript) else { return }
-        let parts = result.components(separatedBy: "\t")
+        let basePos = basePosition
+        let baseD = baseDate
 
+        pollQueue.async { [weak self] in
+            guard let result = Self.executePollScript() else { return }
+            Task { @MainActor [weak self] in
+                self?.applyPollResult(result, prePollDate: prePollDate, basePos: basePos, baseD: baseD)
+            }
+        }
+    }
+
+    private func applyPollResult(_ result: String, prePollDate: Date, basePos: TimeInterval, baseD: Date) {
+        let parts = result.components(separatedBy: "\t")
         switch parts.first {
         case "playing" where parts.count == 6:
             let track = Track(
@@ -57,7 +69,7 @@ final class MusicObserver: ObservableObject {
                 fetchArtwork()
                 currentTrack = track
             }
-            let interpolated = basePosition + prePollDate.timeIntervalSince(baseDate)
+            let interpolated = basePos + prePollDate.timeIntervalSince(baseD)
             if isSeek(reported: position, interpolated: interpolated) {
                 playbackPosition = position
             }
@@ -78,11 +90,12 @@ final class MusicObserver: ObservableObject {
 
     private func interpolatePosition() {
         guard isPlaying else { return }
-        // Estimate current position: anchor + time elapsed since anchor
         playbackPosition = basePosition + Date().timeIntervalSince(baseDate)
     }
 
-    private let pollScript = """
+    // MARK: - Poll script (background)
+
+    private nonisolated static let pollScriptSource = """
         tell application "System Events"
             if not (exists process "Music") then return "not_running"
         end tell
@@ -98,30 +111,36 @@ final class MusicObserver: ObservableObject {
         end tell
         """
 
-    private lazy var compiledScript: NSAppleScript? = {
-        var error: NSDictionary?
-        let script = NSAppleScript(source: pollScript)
-        script?.compileAndReturnError(&error)
-        return error == nil ? script : nil
+    // Only ever executed on serial pollQueue — nonisolated(unsafe) is safe here.
+    private nonisolated(unsafe) static let compiledPollScript: NSAppleScript? = {
+        var err: NSDictionary?
+        let script = NSAppleScript(source: pollScriptSource)
+        script?.compileAndReturnError(&err)
+        return err == nil ? script : nil
     }()
 
-    private func runAppleScript(_ source: String) -> String? {
-        var error: NSDictionary?
-        let result = compiledScript?.executeAndReturnError(&error)
-        guard error == nil else { return nil }
-        return result?.stringValue
+    private nonisolated static func executePollScript() -> String? {
+        var err: NSDictionary?
+        let result = compiledPollScript?.executeAndReturnError(&err)
+        return err == nil ? result?.stringValue : nil
     }
 
+    // MARK: - Artwork (background, cancellable via generation counter)
+
     private func fetchArtwork() {
-        artworkQueue.async {
+        artworkGeneration += 1
+        let gen = artworkGeneration
+        artworkQueue.async { [weak self] in
             let image = Self.fetchArtworkSync()
             Task { @MainActor [weak self] in
-                self?.currentArtwork = image
+                guard let self, self.artworkGeneration == gen else { return }
+                self.currentArtwork = image
             }
         }
     }
 
-    private nonisolated static func fetchArtworkSync() -> NSImage? {
+    // Only ever executed on serial artworkQueue — nonisolated(unsafe) is safe here.
+    private nonisolated(unsafe) static let compiledArtworkScript: NSAppleScript? = {
         let source = """
             tell application "System Events"
                 if not (exists process "Music") then return ""
@@ -134,15 +153,16 @@ final class MusicObserver: ObservableObject {
                 end if
             end tell
             """
-        var compileErr: NSDictionary?
+        var err: NSDictionary?
         let script = NSAppleScript(source: source)
-        script?.compileAndReturnError(&compileErr)
-        guard compileErr == nil else { return nil }
-        var execErr: NSDictionary?
-        let desc = script?.executeAndReturnError(&execErr)
-        guard execErr == nil,
-              let data = desc?.data,
-              !data.isEmpty else { return nil }
+        script?.compileAndReturnError(&err)
+        return err == nil ? script : nil
+    }()
+
+    private nonisolated static func fetchArtworkSync() -> NSImage? {
+        var err: NSDictionary?
+        let desc = compiledArtworkScript?.executeAndReturnError(&err)
+        guard err == nil, let data = desc?.data, !data.isEmpty else { return nil }
         return NSImage(data: data)
     }
 }
