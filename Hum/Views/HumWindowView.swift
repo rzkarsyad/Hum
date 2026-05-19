@@ -80,16 +80,19 @@ struct HumWindowView: View {
                 Image(nsImage: artwork)
                     .resizable()
                     .scaledToFill()
+                    .transition(.opacity.animation(.easeInOut(duration: 0.3)))
+                    .id(musicObserver.currentTrack?.title ?? "")
             } else {
                 Image(systemName: "music.note")
                     .foregroundColor(.white.opacity(0.5))
                     .font(.system(size: 16))
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .background(Color.white.opacity(0.1))
+                    .transition(.opacity.animation(.easeInOut(duration: 0.3)))
             }
         }
         .frame(width: 40, height: 40)
         .clipShape(RoundedRectangle(cornerRadius: 6))
-        .animation(.easeInOut(duration: 0.2), value: musicObserver.currentArtwork != nil)
+        .animation(.easeInOut(duration: 0.3), value: musicObserver.currentTrack?.title)
     }
 }
