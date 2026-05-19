@@ -2,9 +2,15 @@ import SwiftUI
 
 func activeIndex(in lines: [LyricLine], at position: TimeInterval) -> Int? {
     guard !lines.isEmpty else { return nil }
-    var result: Int? = nil
-    for (i, line) in lines.enumerated() {
-        if line.timestamp <= position { result = i } else { break }
+    var lo = 0, hi = lines.count - 1, result: Int? = nil
+    while lo <= hi {
+        let mid = (lo + hi) / 2
+        if lines[mid].timestamp <= position {
+            result = mid
+            lo = mid + 1
+        } else {
+            hi = mid - 1
+        }
     }
     return result
 }
@@ -27,6 +33,20 @@ struct KaraokeView: View, Equatable {
         return max(available, 0.3)
     }
 
+    private func lineOpacity(for index: Int) -> Double {
+        guard let active else { return 0.2 }
+        switch abs(index - active) {
+        case 0: return 0.3
+        case 1: return 0.45
+        case 2: return 0.28
+        default: return 0.15
+        }
+    }
+
+    private func lineScale(for index: Int) -> CGFloat {
+        index == active ? 1.0 : 0.96
+    }
+
     var body: some View {
         GeometryReader { geo in
             let vertPad = max(0, geo.size.height / 2 - lineHeight / 2)
@@ -38,7 +58,7 @@ struct KaraokeView: View, Equatable {
                                 Text(line.text)
                                     .font(.system(size: fontSize, weight: .bold))
                                     .foregroundColor(.white)
-                                    .opacity(0.3)
+                                    .opacity(lineOpacity(for: index))
                                     .multilineTextAlignment(.leading)
                                     .fixedSize(horizontal: false, vertical: true)
                                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -58,6 +78,8 @@ struct KaraokeView: View, Equatable {
                                 }
                             }
                             .padding(.horizontal, 16)
+                            .scaleEffect(lineScale(for: index), anchor: .leading)
+                            .animation(.spring(duration: 0.45, bounce: 0.1), value: active)
                             .id(index)
                         }
                     }
@@ -69,15 +91,26 @@ struct KaraokeView: View, Equatable {
                         proxy.scrollTo(a, anchor: .center)
                     }
                 }
-                .onChange(of: active) { newActive in
+                .onChange(of: active) { _, newActive in
                     if let newActive {
-                        withAnimation(.interpolatingSpring(stiffness: 70, damping: 12)) {
+                        withAnimation(.spring(duration: 0.55, bounce: 0.12)) {
                             proxy.scrollTo(newActive, anchor: .center)
                         }
                     }
                 }
+                .mask(
+                    LinearGradient(
+                        stops: [
+                            .init(color: .clear, location: 0),
+                            .init(color: .black, location: 0.1),
+                            .init(color: .black, location: 0.88),
+                            .init(color: .clear, location: 1)
+                        ],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
             }
         }
-        .clipped()
     }
 }

@@ -14,8 +14,28 @@ final class WindowManager: NSObject, NSWindowDelegate {
         restoreOrSetDefaultPosition()
     }
 
-    func show() { panel.orderFront(nil) }
-    func hide() { panel.orderOut(nil) }
+    func show() {
+        guard !panel.isVisible else { return }
+        panel.alphaValue = 0
+        panel.orderFront(nil)
+        NSAnimationContext.runAnimationGroup { ctx in
+            ctx.duration = 0.25
+            ctx.timingFunction = CAMediaTimingFunction(name: .easeOut)
+            panel.animator().alphaValue = 1
+        }
+    }
+
+    func hide() {
+        guard panel.isVisible else { return }
+        NSAnimationContext.runAnimationGroup({ ctx in
+            ctx.duration = 0.2
+            ctx.timingFunction = CAMediaTimingFunction(name: .easeIn)
+            panel.animator().alphaValue = 0
+        }, completionHandler: {
+            self.panel.orderOut(nil)
+            self.panel.alphaValue = 1
+        })
+    }
 
     func setMinimized(_ minimized: Bool) {
         let headerHeight: CGFloat = 52
