@@ -31,16 +31,16 @@ Floating karaoke lyrics for Apple Music — always on top, always in sync.
 ### Homebrew (recommended)
 
 ```bash
-brew install --cask rzkarsyad/hum/hum
+brew install --cask --no-quarantine rzkarsyad/hum/hum
 ```
 
-No security warnings, no right-click needed.
+The `--no-quarantine` flag bypasses Gatekeeper — required because Hum is not notarized by Apple.
 
 ### Direct Download
 
 Download the latest `Hum.dmg` from [Releases](https://github.com/rzkarsyad/Hum/releases), open it, and drag Hum to Applications.
 
-> **Note:** Because Hum is not yet notarized, macOS may show a security warning on first open. Right-click → **Open** to bypass it once.
+> **Note:** Because Hum is not notarized, macOS may block it on first open. Go to **System Settings → Privacy & Security → Open Anyway**.
 
 ---
 
