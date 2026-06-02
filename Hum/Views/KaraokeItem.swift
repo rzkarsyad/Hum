@@ -57,3 +57,19 @@ func buildItems(from lines: [LyricLine]) -> [KaraokeItem] {
 
     return items
 }
+
+/// Last item whose start time is <= position; nil if before the first item.
+func activeItemIndex(in items: [KaraokeItem], at position: TimeInterval) -> Int? {
+    guard !items.isEmpty else { return nil }
+    var lo = 0, hi = items.count - 1, result: Int? = nil
+    while lo <= hi {
+        let mid = (lo + hi) / 2
+        if items[mid].start <= position {
+            result = mid
+            lo = mid + 1
+        } else {
+            hi = mid - 1
+        }
+    }
+    return result
+}
