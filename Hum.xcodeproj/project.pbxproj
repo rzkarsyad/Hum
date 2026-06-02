@@ -13,6 +13,7 @@
 		286E5CF77CF2FF3EA188AD95 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = C247954EB138FF4C92DFFC96 /* Sparkle */; };
 		2EC17B2A9C7F521E1EC47F99 /* KaraokeActiveLineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 428B1C62425E2625F3517FF9 /* KaraokeActiveLineTests.swift */; };
 		3C50C467AA9E3B7171E0CC32 /* HumWindowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A17EBBBAF45516CDD6A330FB /* HumWindowView.swift */; };
+		5265CEF9B1869B7487946439 /* InstrumentalDotsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2FEAD9005E9BAFADF762008F /* InstrumentalDotsView.swift */; };
 		52A76DC6F91A1681676A511A /* KaraokeItemTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55C8CE5E8D0F48FA979FC375 /* KaraokeItemTests.swift */; };
 		641E895CDB59F901977EE0C1 /* MPMediaItemLyricsSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E3447753EE2659B297AD04F /* MPMediaItemLyricsSource.swift */; };
 		7092B0D840FF112E59474BE9 /* KaraokeItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4EC3EF2734DD750A73B4057 /* KaraokeItem.swift */; };
@@ -53,6 +54,7 @@
 		0E14791D9D57FCBD47D2B5E7 /* WindowManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowManager.swift; sourceTree = "<group>"; };
 		27213DFD0CB49B1CF95DBF15 /* TextEffects.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextEffects.swift; sourceTree = "<group>"; };
 		2C14D1E028C9F4D214BCB7BF /* KaraokeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KaraokeView.swift; sourceTree = "<group>"; };
+		2FEAD9005E9BAFADF762008F /* InstrumentalDotsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstrumentalDotsView.swift; sourceTree = "<group>"; };
 		34C6BB3B2A86D18BCD2C611A /* LyricLine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LyricLine.swift; sourceTree = "<group>"; };
 		38362647FCBE534810B8B1C0 /* LyricsEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LyricsEngine.swift; sourceTree = "<group>"; };
 		428B1C62425E2625F3517FF9 /* KaraokeActiveLineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KaraokeActiveLineTests.swift; sourceTree = "<group>"; };
@@ -146,6 +148,7 @@
 			isa = PBXGroup;
 			children = (
 				A17EBBBAF45516CDD6A330FB /* HumWindowView.swift */,
+				2FEAD9005E9BAFADF762008F /* InstrumentalDotsView.swift */,
 				E4EC3EF2734DD750A73B4057 /* KaraokeItem.swift */,
 				2C14D1E028C9F4D214BCB7BF /* KaraokeView.swift */,
 				01E4916ECFF7F16958A2DD42 /* OnboardingView.swift */,
@@ -331,6 +334,7 @@
 				EAA8DEF6D4061CC44E1888C9 /* AppDelegate.swift in Sources */,
 				046E8B23C002EF578A764551 /* HumApp.swift in Sources */,
 				3C50C467AA9E3B7171E0CC32 /* HumWindowView.swift in Sources */,
+				5265CEF9B1869B7487946439 /* InstrumentalDotsView.swift in Sources */,
 				7092B0D840FF112E59474BE9 /* KaraokeItem.swift in Sources */,
 				7FDAEDFFCB418E0D2767CEA5 /* KaraokeView.swift in Sources */,
 				A465D5F0BF56748782D9AC35 /* LRCLIBSource.swift in Sources */,
