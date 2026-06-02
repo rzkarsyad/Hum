@@ -17,6 +17,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     )
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        // Skip UI/observer setup when hosted by the XCTest runner: launching the
+        // status bar, music polling, and onboarding window during tests crashes
+        // the test host (constraint loop in the onboarding window).
+        if NSClassFromString("XCTestCase") != nil { return }
+
         windowManager = WindowManager(lyricsState: lyricsState, musicObserver: musicObserver)
         statusBarController = StatusBarController(
             musicObserver: musicObserver,
