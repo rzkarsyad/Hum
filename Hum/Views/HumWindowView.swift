@@ -4,15 +4,12 @@ struct HumWindowView: View {
     @ObservedObject var lyricsState: LyricsState
     @ObservedObject var musicObserver: MusicObserver
 
-    private var items: [KaraokeItem] {
-        buildItems(from: lyricsState.lines)
-    }
-
-    private var activeItem: Int? {
-        activeItemIndex(in: items, at: musicObserver.playbackPosition)
-    }
-
     var body: some View {
+        // Computed once per body pass (body re-runs at 60fps via musicObserver):
+        // buildItems is deterministic in lyricsState.lines, so the resulting array
+        // compares equal across ticks and KaraokeView's .equatable() gate skips it.
+        let items = buildItems(from: lyricsState.lines)
+        let activeItem = activeItemIndex(in: items, at: musicObserver.playbackPosition)
         ZStack {
             VibrancyView()
             VStack(spacing: 0) {
