@@ -4,8 +4,12 @@ struct HumWindowView: View {
     @ObservedObject var lyricsState: LyricsState
     @ObservedObject var musicObserver: MusicObserver
 
-    private var activeLineIndex: Int? {
-        activeIndex(in: lyricsState.lines, at: musicObserver.playbackPosition)
+    private var items: [KaraokeItem] {
+        buildItems(from: lyricsState.lines)
+    }
+
+    private var activeItem: Int? {
+        activeItemIndex(in: items, at: musicObserver.playbackPosition)
     }
 
     var body: some View {
@@ -51,9 +55,10 @@ struct HumWindowView: View {
 
                 if !lyricsState.lines.isEmpty {
                     KaraokeView(
-                        lines: lyricsState.lines,
-                        active: activeLineIndex,
-                        fontSize: lyricsState.fontSize
+                        items: items,
+                        active: activeItem,
+                        fontSize: lyricsState.fontSize,
+                        musicObserver: musicObserver
                     )
                     .equatable()
                 } else if lyricsState.networkError {
