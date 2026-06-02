@@ -83,4 +83,31 @@ final class KaraokeItemTests: XCTestCase {
         let items = buildItems(from: [line(0), line(4)])
         XCTAssertEqual(items, [.lyric(line(0)), .lyric(line(4))])
     }
+
+    // MARK: activeItemIndex
+
+    func test_activeItemIndex_nilBeforeFirst() {
+        let items: [KaraokeItem] = [.lyric(line(5)), .lyric(line(10))]
+        XCTAssertNil(activeItemIndex(in: items, at: 3))
+    }
+
+    func test_activeItemIndex_picksInstrumentalInsideGap() {
+        // [lyric@0, instrumental 1.2..10, lyric@10]
+        let items = buildItems(from: [line(0), line(10)])
+        XCTAssertEqual(activeItemIndex(in: items, at: 5), 1) // inside gap -> instrumental
+    }
+
+    func test_activeItemIndex_picksLyricBeforeGap() {
+        let items = buildItems(from: [line(0), line(10)])
+        XCTAssertEqual(activeItemIndex(in: items, at: 0.5), 0) // still the lyric
+    }
+
+    func test_activeItemIndex_picksLastWhenPastAll() {
+        let items = buildItems(from: [line(0), line(10)])
+        XCTAssertEqual(activeItemIndex(in: items, at: 99), items.count - 1)
+    }
+
+    func test_activeItemIndex_emptyIsNil() {
+        XCTAssertNil(activeItemIndex(in: [], at: 5))
+    }
 }
