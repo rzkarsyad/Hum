@@ -30,3 +30,30 @@ func naturalDuration(_ line: LyricLine) -> TimeInterval {
 func dotFill(_ i: Int, progress: Double) -> Double {
     min(max(progress * 3 - Double(i), 0), 1)
 }
+
+/// Builds the merged display list, inserting `.instrumental` items for the intro
+/// and for any inter-line gap that, after the line's natural duration, still leaves
+/// at least `GAP_THRESHOLD` seconds of music.
+func buildItems(from lines: [LyricLine]) -> [KaraokeItem] {
+    guard let first = lines.first else { return [] }
+
+    var items: [KaraokeItem] = []
+
+    if lines.count > 1 && first.timestamp >= GAP_THRESHOLD {
+        items.append(.instrumental(start: 0, end: first.timestamp))
+    }
+
+    for index in lines.indices {
+        let line = lines[index]
+        items.append(.lyric(line))
+
+        guard index + 1 < lines.count else { continue }
+        let nextStart = lines[index + 1].timestamp
+        let lineEnd = line.timestamp + naturalDuration(line)
+        if nextStart - lineEnd >= GAP_THRESHOLD {
+            items.append(.instrumental(start: lineEnd, end: nextStart))
+        }
+    }
+
+    return items
+}

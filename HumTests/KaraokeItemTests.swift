@@ -44,4 +44,43 @@ final class KaraokeItemTests: XCTestCase {
         XCTAssertEqual(dotFill(1, progress: 1), 1, accuracy: 0.0001)
         XCTAssertEqual(dotFill(2, progress: 1), 1, accuracy: 0.0001)
     }
+
+    // MARK: buildItems
+
+    private func line(_ t: Double, _ text: String = "x") -> LyricLine {
+        LyricLine(timestamp: t, text: text)
+    }
+
+    func test_buildItems_empty() {
+        XCTAssertTrue(buildItems(from: []).isEmpty)
+    }
+
+    func test_buildItems_singleLine_noTrailingItem() {
+        let items = buildItems(from: [line(10)])
+        XCTAssertEqual(items, [.lyric(line(10))])
+    }
+
+    func test_buildItems_insertsIntroWhenFirstLineAfterThreshold() {
+        // first line at 6s (>= 5) -> intro instrumental 0..6
+        let items = buildItems(from: [line(6), line(8)])
+        XCTAssertEqual(items.first, .instrumental(start: 0, end: 6))
+    }
+
+    func test_buildItems_noIntroWhenFirstLineEarly() {
+        let items = buildItems(from: [line(2), line(4)])
+        XCTAssertEqual(items.first, .lyric(line(2)))
+    }
+
+    func test_buildItems_insertsGapWhenLongEnough() {
+        // line "x" (1 char) -> naturalDuration clamps to MIN_LINE 1.2
+        // lineEnd = 0 + 1.2 = 1.2 ; next at 10 -> gap 8.8 >= 5 -> instrumental 1.2..10
+        let items = buildItems(from: [line(0), line(10)])
+        XCTAssertEqual(items, [.lyric(line(0)), .instrumental(start: 1.2, end: 10), .lyric(line(10))])
+    }
+
+    func test_buildItems_noGapWhenShort() {
+        // lineEnd = 1.2 ; next at 4 -> remaining 2.8 < 5 -> no instrumental
+        let items = buildItems(from: [line(0), line(4)])
+        XCTAssertEqual(items, [.lyric(line(0)), .lyric(line(4))])
+    }
 }
