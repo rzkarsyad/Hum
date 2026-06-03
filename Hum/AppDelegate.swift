@@ -48,13 +48,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             self?.onboardingWindow = nil
         }
 
+        // Size the window to the view's natural height (its width is locked to 380 inside
+        // the view). NSHostingView's default sizingOptions push the content's size onto the
+        // window as constraints; against a hardcoded height that doesn't match the content,
+        // the window's Update Constraints pass never settles and AppKit aborts the app. So:
+        // measure the content first, then disable those sizing constraints before showing.
+        let hosting = NSHostingView(rootView: view)
+        let contentHeight = hosting.fittingSize.height
+        hosting.sizingOptions = []
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 380, height: 500),
+            contentRect: NSRect(x: 0, y: 0, width: 380, height: contentHeight),
             styleMask: [.titled, .closable],
             backing: .buffered,
             defer: false
         )
-        window.contentView = NSHostingView(rootView: view)
+        window.contentView = hosting
         window.title = "Welcome to Hum"
         window.isReleasedWhenClosed = false
         window.center()
