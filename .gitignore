@@ -1,0 +1,5 @@
+
+# Xcode user state (machine-local, noisy)
+*.xcuserstate
+xcuserdata/
+.DS_Store
