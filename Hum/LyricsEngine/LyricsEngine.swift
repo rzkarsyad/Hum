@@ -31,11 +31,10 @@ final class LyricsEngine {
             if let r = primaryResult {
                 lrc = r
             } else {
-                let fallbackResult = await (fallback as? LRCLIBSource)?.fetchSyncedLyricsWithError(for: track)
+                let fallbackResult = await fallback.fetchSyncedLyricsWithError(for: track)
                 switch fallbackResult {
                 case .success(let s): lrc = s
                 case .failure: lrc = nil; hadNetworkError = true
-                case .none: lrc = nil
                 }
             }
         }

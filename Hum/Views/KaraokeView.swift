@@ -1,35 +1,26 @@
 import SwiftUI
 
-func activeIndex(in lines: [LyricLine], at position: TimeInterval) -> Int? {
-    guard !lines.isEmpty else { return nil }
-    var lo = 0, hi = lines.count - 1, result: Int? = nil
-    while lo <= hi {
-        let mid = (lo + hi) / 2
-        if lines[mid].timestamp <= position {
-            result = mid
-            lo = mid + 1
-        } else {
-            hi = mid - 1
-        }
-    }
-    return result
-}
-
 struct KaraokeView: View, Equatable {
-    let lines: [LyricLine]
+    let items: [KaraokeItem]
     let active: Int?
     let fontSize: CGFloat
+    let musicObserver: MusicObserver
 
+    // Equality intentionally excludes musicObserver: the dots subview observes it
+    // directly, so KaraokeView's body only re-evaluates on structural changes.
     static func == (lhs: KaraokeView, rhs: KaraokeView) -> Bool {
-        lhs.lines == rhs.lines && lhs.active == rhs.active && lhs.fontSize == rhs.fontSize
+        lhs.items == rhs.items && lhs.active == rhs.active && lhs.fontSize == rhs.fontSize
     }
 
     private var lineSpacing: CGFloat { 10 }
     private var lineHeight: CGFloat { ceil(fontSize * 1.25) + lineSpacing }
 
+    /// Duration of the active-line appearance animation: time until the next item
+    /// begins. For a line before an instrumental gap, the next item is that gap, so
+    /// this is the line's natural duration (not the full gap) — fixing the pacing bug.
     private func lineDuration(for index: Int) -> TimeInterval {
-        guard index + 1 < lines.count else { return 0.9 }
-        let available = lines[index + 1].timestamp - lines[index].timestamp
+        guard index + 1 < items.count else { return 0.9 }
+        let available = items[index + 1].start - items[index].start
         return max(available, 0.3)
     }
 
@@ -53,34 +44,12 @@ struct KaraokeView: View, Equatable {
             ScrollViewReader { proxy in
                 ScrollView(.vertical, showsIndicators: false) {
                     VStack(alignment: .leading, spacing: lineSpacing) {
-                        ForEach(Array(lines.enumerated()), id: \.offset) { index, line in
-                            ZStack(alignment: .leading) {
-                                Text(line.text)
-                                    .font(.system(size: fontSize, weight: .bold))
-                                    .foregroundColor(.white)
-                                    .opacity(lineOpacity(for: index))
-                                    .multilineTextAlignment(.leading)
-                                    .fixedSize(horizontal: false, vertical: true)
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-
-                                if index == active {
-                                    Text(line.text)
-                                        .customAttribute(EmphasisAttribute())
-                                        .font(.system(size: fontSize, weight: .bold))
-                                        .foregroundColor(.white)
-                                        .multilineTextAlignment(.leading)
-                                        .fixedSize(horizontal: false, vertical: true)
-                                        .frame(maxWidth: .infinity, alignment: .leading)
-                                        .transition(.asymmetric(
-                                            insertion: AnyTransition(TextTransition(duration: lineDuration(for: index))),
-                                            removal: .opacity.animation(.easeOut(duration: 0.15))
-                                        ))
-                                }
-                            }
-                            .padding(.horizontal, 16)
-                            .scaleEffect(lineScale(for: index), anchor: .leading)
-                            .animation(.spring(duration: 0.45, bounce: 0.1), value: active)
-                            .id(index)
+                        ForEach(Array(items.enumerated()), id: \.offset) { index, item in
+                            itemView(index: index, item: item)
+                                .padding(.horizontal, 16)
+                                .scaleEffect(lineScale(for: index), anchor: .leading)
+                                .animation(.spring(duration: 0.45, bounce: 0.1), value: active)
+                                .id(index)
                         }
                     }
                     .padding(.top, 12)
@@ -111,6 +80,46 @@ struct KaraokeView: View, Equatable {
                     )
                 )
             }
+        }
+    }
+
+    @ViewBuilder
+    private func itemView(index: Int, item: KaraokeItem) -> some View {
+        switch item {
+        case .lyric(let line):
+            ZStack(alignment: .leading) {
+                Text(line.text)
+                    .font(.system(size: fontSize, weight: .bold))
+                    .foregroundColor(.white)
+                    .opacity(lineOpacity(for: index))
+                    .multilineTextAlignment(.leading)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                if index == active {
+                    Text(line.text)
+                        .customAttribute(EmphasisAttribute())
+                        .font(.system(size: fontSize, weight: .bold))
+                        .foregroundColor(.white)
+                        .multilineTextAlignment(.leading)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .transition(.asymmetric(
+                            insertion: AnyTransition(TextTransition(duration: lineDuration(for: index))),
+                            removal: .opacity.animation(.easeOut(duration: 0.15))
+                        ))
+                }
+            }
+        case .instrumental(let start, let end):
+            Group {
+                if index == active {
+                    InstrumentalDotsView(start: start, end: end, fontSize: fontSize, clock: musicObserver)
+                } else {
+                    DotsRow(fills: [0, 0, 0], fontSize: fontSize)
+                        .opacity(lineOpacity(for: index))
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 }

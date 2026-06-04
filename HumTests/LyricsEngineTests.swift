@@ -13,21 +13,25 @@ final class LyricsEngineTests: XCTestCase {
 
     func test_returnsParsedLinesOnSuccess() async {
         let engine = LyricsEngine(primary: MockSource(result: sampleLRC), fallback: MockSource(result: nil))
-        let lines = await engine.fetch(for: track)
+        let result = await engine.fetch(for: track)
+        guard case .found(let lines) = result else { return XCTFail("Expected .found") }
         XCTAssertEqual(lines.count, 2)
         XCTAssertEqual(lines[0].text, "Hello")
     }
 
     func test_fallsBackWhenPrimaryReturnsNil() async {
         let engine = LyricsEngine(primary: MockSource(result: nil), fallback: MockSource(result: sampleLRC))
-        let lines = await engine.fetch(for: track)
+        let result = await engine.fetch(for: track)
+        guard case .found(let lines) = result else { return XCTFail("Expected .found") }
         XCTAssertEqual(lines.count, 2)
     }
 
     func test_returnsEmptyWhenBothSourcesFail() async {
         let engine = LyricsEngine(primary: MockSource(result: nil), fallback: MockSource(result: nil))
-        let lines = await engine.fetch(for: track)
-        XCTAssertTrue(lines.isEmpty)
+        let result = await engine.fetch(for: track)
+        if case .found(let lines) = result {
+            XCTFail("Expected notFound or networkError, got .found(\(lines))")
+        }
     }
 
     func test_cachesPreviousResult() async {
@@ -63,14 +67,16 @@ final class LyricsEngineTests: XCTestCase {
     func test_usesMediaItemLyricsWhenProvided() async {
         let lrc = "[00:01.00] From device\n[00:02.00] Library"
         let engine = LyricsEngine(primary: MockSource(result: nil), fallback: MockSource(result: nil))
-        let lines = await engine.fetch(for: track, mediaItemLyrics: lrc)
+        let result = await engine.fetch(for: track, mediaItemLyrics: lrc)
+        guard case .found(let lines) = result else { return XCTFail("Expected .found") }
         XCTAssertEqual(lines.count, 2)
         XCTAssertEqual(lines[0].text, "From device")
     }
 
     func test_fallsBackToSourcesWhenMediaItemLyricsNil() async {
         let engine = LyricsEngine(primary: MockSource(result: nil), fallback: MockSource(result: sampleLRC))
-        let lines = await engine.fetch(for: track, mediaItemLyrics: nil)
+        let result = await engine.fetch(for: track, mediaItemLyrics: nil)
+        guard case .found(let lines) = result else { return XCTFail("Expected .found") }
         XCTAssertEqual(lines.count, 2)
     }
 
@@ -78,7 +84,8 @@ final class LyricsEngineTests: XCTestCase {
         let fromDevice = "[00:01.00] Device line"
         let fromNetwork = "[00:01.00] Network line"
         let engine = LyricsEngine(primary: MockSource(result: fromNetwork), fallback: MockSource(result: nil))
-        let lines = await engine.fetch(for: track, mediaItemLyrics: fromDevice)
+        let result = await engine.fetch(for: track, mediaItemLyrics: fromDevice)
+        guard case .found(let lines) = result else { return XCTFail("Expected .found") }
         XCTAssertEqual(lines[0].text, "Device line")
     }
 }
