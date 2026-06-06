@@ -6,6 +6,30 @@
     <description>Hum update feed</description>
     <language>en</language>
     <item>
+      <title>Version 1.2.0</title>
+      <pubDate>Sat, 06 Jun 2026 19:44:20 +0000</pubDate>
+      <sparkle:version>3</sparkle:version>
+      <sparkle:shortVersionString>1.2.0</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>15.0</sparkle:minimumSystemVersion>
+      <description><![CDATA[
+        <h3>New</h3>
+        <ul>
+          <li>Spotify support — lyrics for tracks playing in Spotify, not just Apple Music</li>
+          <li>Browser support — lyrics for music in the browser (YouTube Music and music videos)</li>
+        </ul>
+        <h3>Improved</h3>
+        <ul>
+          <li>Liquid Glass collapse/hide buttons on macOS 26+</li>
+          <li>Smoother collapse/expand with a gentle bounce animation</li>
+        </ul>
+      ]]></description>
+      <enclosure
+        url="https://github.com/rzkarsyad/Hum/releases/download/v1.2.0/Hum-1.2.0.dmg"
+        sparkle:edSignature="7NgFQRL0wDTpJQusgi7kYayy3nYhGtFQLp9ji5Ae0m1kH6empsrtF9qIMKWN/wuoxjPHXYLcKyyYqMsjQ790Cg=="
+        length="3889651"
+        type="application/octet-stream"/>
+    </item>
+    <item>
       <title>Version 1.1.0</title>
       <pubDate>Sat, 06 Jun 2026 10:51:48 +0000</pubDate>
       <sparkle:version>2</sparkle:version>
