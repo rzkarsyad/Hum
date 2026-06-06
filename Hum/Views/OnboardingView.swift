@@ -15,7 +15,7 @@ struct OnboardingView: View {
                 Text("Welcome to Hum")
                     .font(.title2.bold())
 
-                Text("Floating karaoke lyrics for Apple Music")
+                Text("Floating karaoke lyrics for Apple Music & Spotify")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
@@ -29,7 +29,7 @@ struct OnboardingView: View {
                 step(
                     icon: "music.note.list",
                     color: .blue,
-                    title: "Play music in Apple Music",
+                    title: "Play music in Apple Music or Spotify",
                     detail: "Hum automatically fetches synced lyrics for the current track."
                 )
                 step(
@@ -42,7 +42,7 @@ struct OnboardingView: View {
                     icon: "hand.tap",
                     color: .orange,
                     title: "Allow Automation access",
-                    detail: "macOS will ask permission to let Hum read what's playing in Apple Music. Tap Allow."
+                    detail: "macOS will ask permission to let Hum read what's playing in Apple Music or Spotify. Tap Allow."
                 )
             }
             .padding(.horizontal, 28)
