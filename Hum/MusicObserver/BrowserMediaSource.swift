@@ -39,12 +39,23 @@ func isBrowserBundleID(_ id: String) -> Bool {
     return browsers.contains(id)
 }
 
-/// Parse one NDJSON line from the adapter stream into a structured outcome.
+/// Parse one line from the adapter into a structured outcome. The `stream`
+/// command wraps the now-playing dictionary in an envelope
+/// (`{"type":"data","diff":...,"payload":{...}}`) while `get` emits the flat
+/// dictionary directly. We run `stream` with `--no-diff` so every payload is the
+/// full current state; here we unwrap the envelope (if present) and classify it.
 func parseBrowserNowPlaying(_ jsonLine: String) -> BrowserParse {
     guard let data = jsonLine.data(using: .utf8),
-          let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
+          let root = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
     else { return .ignore }
+    let nowPlaying = (root["payload"] as? [String: Any]) ?? root
+    return classifyNowPlaying(nowPlaying)
+}
 
+/// Classify a now-playing dictionary (same keys as the adapter's `get` output).
+/// An empty dictionary (nothing playing) classifies as `.other`, which clears any
+/// previously held browser snapshot.
+func classifyNowPlaying(_ obj: [String: Any]) -> BrowserParse {
     let bundleID = (obj["bundleIdentifier"] as? String) ?? ""
     let parentID = (obj["parentApplicationBundleIdentifier"] as? String) ?? ""
     let isBrowser = isBrowserBundleID(bundleID) || isBrowserBundleID(parentID)
@@ -130,7 +141,7 @@ final class BrowserMediaSource {
 
         let proc = Process()
         proc.executableURL = URL(fileURLWithPath: "/usr/bin/perl")
-        proc.arguments = [script, framework, "stream"]
+        proc.arguments = [script, framework, "stream", "--no-diff"]
         let pipe = Pipe()
         proc.standardOutput = pipe
         proc.standardError = FileHandle.nullDevice

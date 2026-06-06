@@ -69,4 +69,28 @@ final class BrowserMediaSourceTests: XCTestCase {
         let line = #"{"bundleIdentifier":"com.google.Chrome","playing":true}"#
         XCTAssertEqual(parseBrowserNowPlaying(line), .other)
     }
+
+    // MARK: - stream envelope ({"type":"data","diff":...,"payload":{...}})
+
+    func test_parse_streamEnvelopeUnwrapped() {
+        // Real-world shape: YouTube Music in Safari reports via WebKit.GPU with a
+        // Safari parent, nested inside the stream envelope.
+        let line = #"{"type":"data","diff":false,"payload":{"bundleIdentifier":"com.apple.WebKit.GPU","parentApplicationBundleIdentifier":"com.apple.Safari","playing":true,"title":"Curious","artist":"AND2BLE","duration":180.0,"elapsedTime":5.0,"playbackRate":1.0}}"#
+        guard case let .browser(s) = parseBrowserNowPlaying(line) else {
+            return XCTFail("expected .browser from stream envelope")
+        }
+        XCTAssertEqual(s.bundleID, "com.apple.Safari")  // resolved via parent
+        XCTAssertEqual(s.title, "Curious")
+        XCTAssertEqual(s.artist, "AND2BLE")
+        XCTAssertTrue(s.isPlaying)
+    }
+
+    func test_parse_streamEmptyPayloadIsOther() {
+        XCTAssertEqual(parseBrowserNowPlaying(#"{"type":"data","diff":false,"payload":{}}"#), .other)
+    }
+
+    func test_parse_streamNonBrowserPayloadIsOther() {
+        let line = #"{"type":"data","diff":false,"payload":{"bundleIdentifier":"com.apple.Music","playing":true,"title":"X"}}"#
+        XCTAssertEqual(parseBrowserNowPlaying(line), .other)
+    }
 }
