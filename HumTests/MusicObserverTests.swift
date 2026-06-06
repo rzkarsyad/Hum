@@ -71,4 +71,35 @@ final class MusicObserverTests: XCTestCase {
     func test_parseMalformedFallsBackToStopped() {
         XCTAssertEqual(parsePollResult("playing\tmusic\ttoo\tfew"), .stopped)
     }
+
+    // MARK: - mergeOutcome
+
+    private func snap(playing: Bool, title: String = "Song") -> BrowserSnapshot {
+        BrowserSnapshot(bundleID: "com.google.Chrome", title: title, artist: "A", album: "Al",
+                        duration: 180, isPlaying: playing, elapsedTime: 10, playbackRate: 1, artworkData: nil)
+    }
+
+    func test_merge_appleScriptPlayingWins() {
+        let asPlaying = PollOutcome.playing(PollResult(source: .spotify,
+            track: Track(title: "S", artist: "B", album: "C"), position: 5))
+        let result = mergeOutcome(appleScript: asPlaying, browser: snap(playing: true), browserPosition: 99)
+        XCTAssertEqual(result, asPlaying)
+    }
+
+    func test_merge_browserWinsWhenAppleScriptStopped() {
+        let result = mergeOutcome(appleScript: .stopped, browser: snap(playing: true), browserPosition: 33)
+        guard case let .playing(p) = result else { return XCTFail("expected .playing") }
+        XCTAssertEqual(p.source, .browser)
+        XCTAssertEqual(p.track.title, "Song")
+        XCTAssertEqual(p.position, 33, accuracy: 0.001)
+    }
+
+    func test_merge_pausedBrowserDoesNotWin() {
+        let result = mergeOutcome(appleScript: .stopped, browser: snap(playing: false), browserPosition: 1)
+        XCTAssertEqual(result, .stopped)
+    }
+
+    func test_merge_noBrowserFallsBackToAppleScript() {
+        XCTAssertEqual(mergeOutcome(appleScript: .paused, browser: nil, browserPosition: 0), .paused)
+    }
 }
