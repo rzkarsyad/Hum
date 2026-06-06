@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		027A2F7590AA132C5DDA1BA4 /* MediaRemoteAdapter in Resources */ = {isa = PBXBuildFile; fileRef = 951ADDE294A328EA676E3813 /* MediaRemoteAdapter */; };
 		046E8B23C002EF578A764551 /* HumApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = ADCCDFCDE8EC033A84466191 /* HumApp.swift */; };
 		139F872723D69437A2ADC3BF /* WindowManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E14791D9D57FCBD47D2B5E7 /* WindowManager.swift */; };
 		2712BFE4B30D4479B7A1D370 /* LRCParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A7214A89BA961F2B8081A78 /* LRCParserTests.swift */; };
@@ -67,6 +68,7 @@
 		7E202062A8DF5CE5EB2B9CBE /* LaunchAtLoginManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchAtLoginManager.swift; sourceTree = "<group>"; };
 		84DCE40615E3473600EDA417 /* LyricsState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LyricsState.swift; sourceTree = "<group>"; };
 		8ADFEA5EA5E90B6C16317FAB /* LRCParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LRCParser.swift; sourceTree = "<group>"; };
+		951ADDE294A328EA676E3813 /* MediaRemoteAdapter */ = {isa = PBXFileReference; lastKnownFileType = folder; name = MediaRemoteAdapter; path = Vendor/MediaRemoteAdapter; sourceTree = SOURCE_ROOT; };
 		966AC5FAA1C74780DE44CD64 /* StatusBarController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusBarController.swift; sourceTree = "<group>"; };
 		9A7214A89BA961F2B8081A78 /* LRCParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LRCParserTests.swift; sourceTree = "<group>"; };
 		A02784DA6CF9B57A0C8CA514 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
@@ -126,6 +128,7 @@
 		351F2304DFCDE3703A604B16 = {
 			isa = PBXGroup;
 			children = (
+				951ADDE294A328EA676E3813 /* MediaRemoteAdapter */,
 				E3D639DD770D947D5D601C43 /* Hum */,
 				07A6A6AD08CFB98CC994D668 /* HumTests */,
 				06D2708A8F0D2023256DE12B /* Frameworks */,
@@ -306,6 +309,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				E0184287C512019F22127415 /* Assets.xcassets in Resources */,
+				027A2F7590AA132C5DDA1BA4 /* MediaRemoteAdapter in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
