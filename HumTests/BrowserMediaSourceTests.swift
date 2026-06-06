@@ -93,4 +93,28 @@ final class BrowserMediaSourceTests: XCTestCase {
         let line = #"{"type":"data","diff":false,"payload":{"bundleIdentifier":"com.apple.Music","playing":true,"title":"X"}}"#
         XCTAssertEqual(parseBrowserNowPlaying(line), .other)
     }
+
+    // MARK: - position anchoring (the "racing lyrics" fix)
+
+    func test_parse_parsesMediaTimestamp() {
+        let line = #"{"type":"data","diff":false,"payload":{"bundleIdentifier":"com.google.Chrome","playing":true,"title":"T","elapsedTime":13.207,"timestamp":"2026-06-06T19:24:49Z"}}"#
+        guard case let .browser(s) = parseBrowserNowPlaying(line) else { return XCTFail("expected .browser") }
+        XCTAssertEqual(s.timestamp, ISO8601DateFormatter().date(from: "2026-06-06T19:24:49Z"))
+        XCTAssertEqual(s.elapsedTime, 13.207, accuracy: 0.001)
+    }
+
+    func test_livePosition_extrapolatesFromAnchor() {
+        // Snapshot sampled at 13.207s, 88s ago, playing 1x → real position ~101.2s,
+        // NOT the stale 13.2s. This is the regression that caused racing lyrics.
+        let anchor = ISO8601DateFormatter().date(from: "2026-06-06T19:24:49Z")!
+        let now = anchor.addingTimeInterval(88)
+        XCTAssertEqual(livePosition(elapsedTime: 13.207, anchor: anchor, rate: 1, now: now),
+                       101.207, accuracy: 0.01)
+    }
+
+    func test_livePosition_rateZeroTreatedAsRealtime() {
+        let anchor = Date(timeIntervalSince1970: 1000)
+        XCTAssertEqual(livePosition(elapsedTime: 5, anchor: anchor, rate: 0, now: anchor.addingTimeInterval(10)),
+                       15, accuracy: 0.001)
+    }
 }
