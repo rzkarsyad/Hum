@@ -119,10 +119,18 @@ final class StatusBarController: NSObject {
             }
             .store(in: &cancellables)
 
-        let hasContentPublisher = lyricsState.$lines
-            .combineLatest(lyricsState.$noLyricsFound)
-            .combineLatest(lyricsState.$networkError)
-            .map { pair, networkError in !pair.0.isEmpty || pair.1 || networkError }
+        let hasContentPublisher = Publishers.CombineLatest4(
+            lyricsState.$lines,
+            lyricsState.$noLyricsFound,
+            lyricsState.$networkError,
+            musicObserver.$currentSource
+        )
+        .map { lines, noLyricsFound, networkError, source -> Bool in
+            // For browser media, only show when synced lyrics actually exist —
+            // stay hidden for ordinary videos / podcasts / no-lyrics tracks.
+            if source == .browser { return !lines.isEmpty }
+            return !lines.isEmpty || noLyricsFound || networkError
+        }
 
         Publishers.CombineLatest3(musicObserver.$isPlaying, hasContentPublisher, lyricsState.$isManuallyHidden)
             .sink { [weak self] isPlaying, hasContent, isHidden in
