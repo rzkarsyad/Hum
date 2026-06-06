@@ -13,6 +13,9 @@ targets:
     platform: macOS
     sources:
       - Hum
+      - path: Vendor/MediaRemoteAdapter
+        type: folder
+        buildPhase: resources
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.rzkarsyad.Hum
