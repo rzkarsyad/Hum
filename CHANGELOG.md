@@ -2,6 +2,12 @@
 
 All notable changes to Hum are documented here.
 
+## [Unreleased]
+
+### Added
+
+- **Spotify support** — Hum now detects the currently playing track from Spotify in addition to Apple Music, automatically showing synced lyrics for whichever app is playing. Apple Music takes priority when both are playing. (macOS will prompt once for Automation access to Spotify the first time it's read.)
+
 ## [1.0.0] — 2026-05-19
 
 ### Initial release

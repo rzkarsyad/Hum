@@ -1,5 +1,12 @@
 import SwiftUI
 
+/// Shared layout constants. The header height is the single source of truth for
+/// both the SwiftUI header and the minimized window height (WindowManager) so the
+/// collapsed bar matches the header exactly and never clips its content.
+enum HumLayout {
+    static let headerHeight: CGFloat = 60
+}
+
 struct HumWindowView: View {
     @ObservedObject var lyricsState: LyricsState
     @ObservedObject var musicObserver: MusicObserver
@@ -28,27 +35,11 @@ struct HumWindowView: View {
                             .truncationMode(.tail)
                     }
                     Spacer()
-                    Button {
-                        lyricsState.isMinimized.toggle()
-                    } label: {
-                        Image(systemName: lyricsState.isMinimized ? "chevron.down.circle" : "chevron.up.circle")
-                            .foregroundColor(.white.opacity(0.6))
-                            .font(.system(size: 14))
-                    }
-                    .buttonStyle(.plain)
-
-                    Button {
-                        lyricsState.isManuallyHidden = true
-                    } label: {
-                        Image(systemName: "eye.slash")
-                            .foregroundColor(.white.opacity(0.6))
-                            .font(.system(size: 14))
-                    }
-                    .buttonStyle(.plain)
+                    controlButtons
                 }
                 .padding(.horizontal, 12)
                 .padding(.vertical, 10)
-                .frame(height: 60)
+                .frame(height: HumLayout.headerHeight)
 
                 if !lyricsState.lines.isEmpty {
                     KaraokeView(
@@ -67,6 +58,32 @@ struct HumWindowView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .clipShape(RoundedRectangle(cornerRadius: 16))
+    }
+
+    // Collapse + hide controls as Liquid Glass buttons (macOS 26+), grouped in a
+    // GlassEffectContainer so the two circles blend/morph. Falls back to a subtle
+    // material circle on older macOS where Liquid Glass isn't available.
+    @ViewBuilder
+    private var controlButtons: some View {
+        let cluster = HStack(spacing: 8) {
+            ControlButton(
+                systemName: lyricsState.isMinimized ? "chevron.down" : "chevron.up",
+                accessibilityLabel: lyricsState.isMinimized ? "Expand" : "Collapse"
+            ) {
+                withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
+                    lyricsState.isMinimized.toggle()
+                }
+            }
+            ControlButton(systemName: "eye.slash", accessibilityLabel: "Hide lyrics") {
+                lyricsState.isManuallyHidden = true
+            }
+        }
+
+        if #available(macOS 26.0, *) {
+            GlassEffectContainer(spacing: 8) { cluster }
+        } else {
+            cluster
+        }
     }
 
     private func emptyState(icon: String, message: String) -> some View {
@@ -105,5 +122,43 @@ struct HumWindowView: View {
         .frame(width: 40, height: 40)
         .clipShape(RoundedRectangle(cornerRadius: 6))
         .animation(.easeInOut(duration: 0.3), value: musicObserver.currentTrack?.title)
+    }
+}
+
+/// A compact circular icon button styled as Liquid Glass on macOS 26+.
+private struct ControlButton: View {
+    let systemName: String
+    var accessibilityLabel: String = ""
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: systemName)
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(.white.opacity(0.9))
+                .contentTransition(.symbolEffect(.replace))
+                .frame(width: 26, height: 26)
+                .contentShape(.circle)
+        }
+        .accessibilityLabel(accessibilityLabel)
+        .glassControlStyle()
+    }
+}
+
+private extension View {
+    /// Liquid Glass button styling on macOS 26+, with a material-circle fallback
+    /// for earlier systems where the glass APIs are unavailable.
+    @ViewBuilder
+    func glassControlStyle() -> some View {
+        if #available(macOS 26.0, *) {
+            self
+                .buttonStyle(.glass)
+                .buttonBorderShape(.circle)
+                .controlSize(.small)
+        } else {
+            self
+                .buttonStyle(.plain)
+                .background(.ultraThinMaterial, in: Circle())
+        }
     }
 }
