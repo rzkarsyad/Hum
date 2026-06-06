@@ -11,7 +11,19 @@ struct BrowserSnapshot: Equatable {
     let isPlaying: Bool
     let elapsedTime: TimeInterval
     let playbackRate: Double
+    let timestamp: Date?   // when elapsedTime was sampled (MediaRemote), for accurate extrapolation
     let artworkData: Data?
+}
+
+private let iso8601Formatter = ISO8601DateFormatter()
+
+/// Extrapolate the live playback position from a sampled position and its anchor
+/// time. The adapter only emits on state changes, so between emits the position
+/// must be projected forward from `anchor` (the media's own timestamp) — anchoring
+/// to receipt time instead would lag by however long the snapshot is old.
+func livePosition(elapsedTime: TimeInterval, anchor: Date, rate: Double, now: Date) -> TimeInterval {
+    let effectiveRate = rate == 0 ? 1.0 : rate
+    return max(0, elapsedTime + now.timeIntervalSince(anchor) * effectiveRate)
 }
 
 /// Outcome of parsing one now-playing JSON line.
@@ -67,6 +79,9 @@ func classifyNowPlaying(_ obj: [String: Any]) -> BrowserParse {
     var artwork: Data?
     if let b64 = obj["artworkData"] as? String { artwork = Data(base64Encoded: b64) }
 
+    var timestamp: Date?
+    if let tsStr = obj["timestamp"] as? String { timestamp = iso8601Formatter.date(from: tsStr) }
+
     return .browser(BrowserSnapshot(
         bundleID: effectiveID,
         title: title,
@@ -76,6 +91,7 @@ func classifyNowPlaying(_ obj: [String: Any]) -> BrowserParse {
         isPlaying: (obj["playing"] as? Bool) ?? false,
         elapsedTime: (obj["elapsedTime"] as? Double) ?? 0,
         playbackRate: (obj["playbackRate"] as? Double) ?? 1.0,
+        timestamp: timestamp,
         artworkData: artwork
     ))
 }
@@ -113,8 +129,11 @@ final class BrowserMediaSource {
     func current(now: Date) -> (snapshot: BrowserSnapshot, position: TimeInterval)? {
         lock.lock(); defer { lock.unlock() }
         guard let s = snapshot, s.isPlaying else { return nil }
-        let rate = s.playbackRate == 0 ? 1.0 : s.playbackRate
-        let pos = max(0, s.elapsedTime + now.timeIntervalSince(receivedAt) * rate)
+        // Anchor to the media's own timestamp when available — the snapshot may be
+        // many seconds old (the adapter only emits on change), and receipt time
+        // would put us that far behind the real position.
+        let anchor = s.timestamp ?? receivedAt
+        let pos = livePosition(elapsedTime: s.elapsedTime, anchor: anchor, rate: s.playbackRate, now: now)
         return (s, pos)
     }
 

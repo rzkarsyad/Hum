@@ -76,7 +76,8 @@ final class MusicObserverTests: XCTestCase {
 
     private func snap(playing: Bool, title: String = "Song") -> BrowserSnapshot {
         BrowserSnapshot(bundleID: "com.google.Chrome", title: title, artist: "A", album: "Al",
-                        duration: 180, isPlaying: playing, elapsedTime: 10, playbackRate: 1, artworkData: nil)
+                        duration: 180, isPlaying: playing, elapsedTime: 10, playbackRate: 1,
+                        timestamp: nil, artworkData: nil)
     }
 
     func test_merge_appleScriptPlayingWins() {
