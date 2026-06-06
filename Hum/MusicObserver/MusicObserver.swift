@@ -10,6 +10,7 @@ func isSeek(reported: TimeInterval, interpolated: TimeInterval) -> Bool {
 enum PlayerSource: String, Equatable {
     case appleMusic = "music"
     case spotify = "spotify"
+    case browser = "browser"
 }
 
 struct PollResult: Equatable {
@@ -41,6 +42,18 @@ func parsePollResult(_ raw: String) -> PollOutcome {
     default:
         return .stopped
     }
+}
+
+/// Combine the AppleScript outcome (Apple Music / Spotify) with the latest
+/// browser snapshot. Priority: a *playing* Apple Music / Spotify always wins;
+/// otherwise a *playing* browser wins; otherwise reflect the AppleScript state.
+func mergeOutcome(appleScript: PollOutcome, browser: BrowserSnapshot?, browserPosition: TimeInterval) -> PollOutcome {
+    if case .playing = appleScript { return appleScript }
+    if let b = browser, b.isPlaying {
+        let track = Track(title: b.title, artist: b.artist, album: b.album, duration: b.duration)
+        return .playing(PollResult(source: .browser, track: track, position: browserPosition))
+    }
+    return appleScript
 }
 
 @MainActor
@@ -261,6 +274,8 @@ final class MusicObserver: ObservableObject {
                   !data.isEmpty
             else { return nil }
             return NSImage(data: data)
+        case .browser:
+            return nil  // replaced in browser-integration task
         }
     }
 }
