@@ -3,3 +3,7 @@
 *.xcuserstate
 xcuserdata/
 .DS_Store
+
+# Build / release artifacts
+build/
+dist/
