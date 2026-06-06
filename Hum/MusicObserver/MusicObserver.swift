@@ -10,6 +10,7 @@ func isSeek(reported: TimeInterval, interpolated: TimeInterval) -> Bool {
 enum PlayerSource: String, Equatable {
     case appleMusic = "music"
     case spotify = "spotify"
+    case browser = "browser"
 }
 
 struct PollResult: Equatable {
@@ -43,6 +44,18 @@ func parsePollResult(_ raw: String) -> PollOutcome {
     }
 }
 
+/// Combine the AppleScript outcome (Apple Music / Spotify) with the latest
+/// browser snapshot. Priority: a *playing* Apple Music / Spotify always wins;
+/// otherwise a *playing* browser wins; otherwise reflect the AppleScript state.
+func mergeOutcome(appleScript: PollOutcome, browser: BrowserSnapshot?, browserPosition: TimeInterval) -> PollOutcome {
+    if case .playing = appleScript { return appleScript }
+    if let b = browser, b.isPlaying {
+        let track = Track(title: b.title, artist: b.artist, album: b.album, duration: b.duration)
+        return .playing(PollResult(source: .browser, track: track, position: browserPosition))
+    }
+    return appleScript
+}
+
 @MainActor
 final class MusicObserver: ObservableObject {
     @Published private(set) var currentTrack: Track? = nil
@@ -54,11 +67,17 @@ final class MusicObserver: ObservableObject {
     private var displayTimer: Timer?
     private var basePosition: TimeInterval = 0
     private var baseDate: Date = Date()
-    private var currentSource: PlayerSource = .appleMusic
+    @Published private(set) var currentSource: PlayerSource = .appleMusic
+    private var lastBrowserArtwork: Data?
 
     private let pollQueue = DispatchQueue(label: "com.hum.poll", qos: .userInteractive)
     private let artworkQueue = DispatchQueue(label: "com.hum.artwork", qos: .utility)
     private var artworkGeneration = 0
+    private let browserSource: BrowserMediaSource
+
+    init(browserSource: BrowserMediaSource = BrowserMediaSource()) {
+        self.browserSource = browserSource
+    }
 
     func start() {
         let poll = Timer(timeInterval: 0.5, repeats: true) { [weak self] _ in
@@ -72,11 +91,14 @@ final class MusicObserver: ObservableObject {
         }
         RunLoop.main.add(display, forMode: .common)
         displayTimer = display
+
+        browserSource.start()
     }
 
     func stop() {
         pollTimer?.invalidate(); pollTimer = nil
         displayTimer?.invalidate(); displayTimer = nil
+        browserSource.stop()
     }
 
     // Captures main-actor state, then offloads AppleScript execution to background.
@@ -94,13 +116,29 @@ final class MusicObserver: ObservableObject {
     }
 
     private func applyPollResult(_ result: String, prePollDate: Date, basePos: TimeInterval, baseD: Date) {
-        switch parsePollResult(result) {
+        let browser = browserSource.current(now: prePollDate)
+        let outcome = mergeOutcome(
+            appleScript: parsePollResult(result),
+            browser: browser?.snapshot,
+            browserPosition: browser?.position ?? 0
+        )
+        switch outcome {
         case .playing(let poll):
-            if currentTrack != poll.track {
-                currentSource = poll.source
-                fetchArtwork()
-                currentTrack = poll.track
+            let trackChanged = (currentTrack != poll.track)
+            if currentSource != poll.source { currentSource = poll.source }
+            if trackChanged { currentTrack = poll.track }
+
+            if poll.source == .browser {
+                let art = browser?.snapshot.artworkData
+                if trackChanged || art != lastBrowserArtwork {
+                    lastBrowserArtwork = art
+                    fetchArtwork(browserData: art)
+                }
+            } else if trackChanged {
+                lastBrowserArtwork = nil
+                fetchArtwork(browserData: nil)
             }
+
             let interpolated = basePos + prePollDate.timeIntervalSince(baseD)
             if isSeek(reported: poll.position, interpolated: interpolated) {
                 playbackPosition = poll.position
@@ -117,6 +155,7 @@ final class MusicObserver: ObservableObject {
             playbackPosition = 0
             basePosition = 0
             baseDate = prePollDate
+            lastBrowserArtwork = nil
         }
     }
 
@@ -188,12 +227,12 @@ final class MusicObserver: ObservableObject {
 
     // MARK: - Artwork (background, cancellable via generation counter)
 
-    private func fetchArtwork() {
+    private func fetchArtwork(browserData: Data?) {
         artworkGeneration += 1
         let gen = artworkGeneration
         let source = currentSource
         artworkQueue.async { [weak self] in
-            let image = Self.fetchArtworkSync(source: source)
+            let image = Self.fetchArtworkSync(source: source, browserData: browserData)
             Task { @MainActor [weak self] in
                 guard let self, self.artworkGeneration == gen else { return }
                 self.currentArtwork = image
@@ -244,7 +283,7 @@ final class MusicObserver: ObservableObject {
         return err == nil ? script : nil
     }()
 
-    private nonisolated static func fetchArtworkSync(source: PlayerSource) -> NSImage? {
+    private nonisolated static func fetchArtworkSync(source: PlayerSource, browserData: Data?) -> NSImage? {
         switch source {
         case .appleMusic:
             var err: NSDictionary?
@@ -260,6 +299,9 @@ final class MusicObserver: ObservableObject {
                   let data = try? Data(contentsOf: url),
                   !data.isEmpty
             else { return nil }
+            return NSImage(data: data)
+        case .browser:
+            guard let data = browserData, !data.isEmpty else { return nil }
             return NSImage(data: data)
         }
     }
