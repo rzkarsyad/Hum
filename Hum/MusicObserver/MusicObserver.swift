@@ -5,6 +5,44 @@ func isSeek(reported: TimeInterval, interpolated: TimeInterval) -> Bool {
     abs(reported - interpolated) > 1.5
 }
 
+/// Which media app a poll result came from. Raw values match the source tag
+/// emitted by the AppleScript poll.
+enum PlayerSource: String, Equatable {
+    case appleMusic = "music"
+    case spotify = "spotify"
+}
+
+struct PollResult: Equatable {
+    let source: PlayerSource
+    let track: Track
+    let position: TimeInterval
+}
+
+enum PollOutcome: Equatable {
+    case playing(PollResult)
+    case paused
+    case stopped
+}
+
+/// Parses the tab-separated string returned by the poll AppleScript into a
+/// structured outcome. Pure and source-agnostic so it can be unit-tested.
+/// Playing format: `playing\t<source>\t<title>\t<artist>\t<album>\t<position>\t<duration>`
+func parsePollResult(_ raw: String) -> PollOutcome {
+    let parts = raw.components(separatedBy: "\t")
+    switch parts.first {
+    case "playing" where parts.count == 7:
+        guard let source = PlayerSource(rawValue: parts[1]) else { return .stopped }
+        let position = TimeInterval(parts[5].replacingOccurrences(of: ",", with: ".")) ?? 0
+        let duration = TimeInterval(parts[6].replacingOccurrences(of: ",", with: "."))
+        let track = Track(title: parts[2], artist: parts[3], album: parts[4], duration: duration)
+        return .playing(PollResult(source: source, track: track, position: position))
+    case "paused":
+        return .paused
+    default:
+        return .stopped
+    }
+}
+
 @MainActor
 final class MusicObserver: ObservableObject {
     @Published private(set) var currentTrack: Track? = nil
@@ -16,6 +54,7 @@ final class MusicObserver: ObservableObject {
     private var displayTimer: Timer?
     private var basePosition: TimeInterval = 0
     private var baseDate: Date = Date()
+    private var currentSource: PlayerSource = .appleMusic
 
     private let pollQueue = DispatchQueue(label: "com.hum.poll", qos: .userInteractive)
     private let artworkQueue = DispatchQueue(label: "com.hum.artwork", qos: .utility)
@@ -55,30 +94,23 @@ final class MusicObserver: ObservableObject {
     }
 
     private func applyPollResult(_ result: String, prePollDate: Date, basePos: TimeInterval, baseD: Date) {
-        let parts = result.components(separatedBy: "\t")
-        switch parts.first {
-        case "playing" where parts.count == 6:
-            let track = Track(
-                title: parts[1],
-                artist: parts[2],
-                album: parts[3],
-                duration: TimeInterval(parts[5].replacingOccurrences(of: ",", with: "."))
-            )
-            let position = TimeInterval(parts[4].replacingOccurrences(of: ",", with: ".")) ?? 0
-            if currentTrack != track {
+        switch parsePollResult(result) {
+        case .playing(let poll):
+            if currentTrack != poll.track {
+                currentSource = poll.source
                 fetchArtwork()
-                currentTrack = track
+                currentTrack = poll.track
             }
             let interpolated = basePos + prePollDate.timeIntervalSince(baseD)
-            if isSeek(reported: position, interpolated: interpolated) {
-                playbackPosition = position
+            if isSeek(reported: poll.position, interpolated: interpolated) {
+                playbackPosition = poll.position
             }
-            basePosition = position
+            basePosition = poll.position
             baseDate = prePollDate
             isPlaying = true
-        case "paused":
+        case .paused:
             isPlaying = false
-        default:
+        case .stopped:
             isPlaying = false
             currentTrack = nil
             currentArtwork = nil
@@ -95,20 +127,49 @@ final class MusicObserver: ObservableObject {
 
     // MARK: - Poll script (background)
 
+    // Polls Apple Music and Spotify in a single pass. Apple Music takes priority
+    // when both are playing. `exists process` guards ensure we never *launch*
+    // either app — `tell application "X"` alone would auto-launch it.
+    // Spotify reports duration in milliseconds, so it is normalized to seconds.
     private nonisolated static let pollScriptSource = """
+        set musicRunning to false
+        set spotifyRunning to false
         tell application "System Events"
-            if not (exists process "Music") then return "not_running"
+            if (exists process "Music") then set musicRunning to true
+            if (exists process "Spotify") then set spotifyRunning to true
         end tell
-        tell application "Music"
-            if player state is playing then
-                set t to current track
-                return "playing\t" & (name of t) & "\t" & (artist of t) & "\t" & (album of t) & "\t" & (player position as string) & "\t" & (duration of t as string)
-            else if player state is paused then
-                return "paused"
-            else
-                return "stopped"
-            end if
-        end tell
+
+        if musicRunning then
+            tell application "Music"
+                if player state is playing then
+                    set t to current track
+                    return "playing\tmusic\t" & (name of t) & "\t" & (artist of t) & "\t" & (album of t) & "\t" & (player position as string) & "\t" & (duration of t as string)
+                end if
+            end tell
+        end if
+
+        if spotifyRunning then
+            tell application "Spotify"
+                if player state is playing then
+                    set t to current track
+                    return "playing\tspotify\t" & (name of t) & "\t" & (artist of t) & "\t" & (album of t) & "\t" & (player position as string) & "\t" & (((duration of t) / 1000) as string)
+                end if
+            end tell
+        end if
+
+        if musicRunning then
+            tell application "Music"
+                if player state is paused then return "paused"
+            end tell
+        end if
+
+        if spotifyRunning then
+            tell application "Spotify"
+                if player state is paused then return "paused"
+            end tell
+        end if
+
+        return "stopped"
         """
 
     // Only ever executed on serial pollQueue — nonisolated(unsafe) is safe here.
@@ -130,8 +191,9 @@ final class MusicObserver: ObservableObject {
     private func fetchArtwork() {
         artworkGeneration += 1
         let gen = artworkGeneration
+        let source = currentSource
         artworkQueue.async { [weak self] in
-            let image = Self.fetchArtworkSync()
+            let image = Self.fetchArtworkSync(source: source)
             Task { @MainActor [weak self] in
                 guard let self, self.artworkGeneration == gen else { return }
                 self.currentArtwork = image
@@ -139,8 +201,9 @@ final class MusicObserver: ObservableObject {
         }
     }
 
+    // Apple Music exposes artwork as embedded raw data.
     // Only ever executed on serial artworkQueue — nonisolated(unsafe) is safe here.
-    private nonisolated(unsafe) static let compiledArtworkScript: NSAppleScript? = {
+    private nonisolated(unsafe) static let compiledMusicArtworkScript: NSAppleScript? = {
         let source = """
             tell application "System Events"
                 if not (exists process "Music") then return ""
@@ -159,10 +222,45 @@ final class MusicObserver: ObservableObject {
         return err == nil ? script : nil
     }()
 
-    private nonisolated static func fetchArtworkSync() -> NSImage? {
+    // Spotify exposes artwork as a remote URL that must be downloaded.
+    // Only ever executed on serial artworkQueue — nonisolated(unsafe) is safe here.
+    private nonisolated(unsafe) static let compiledSpotifyArtworkURLScript: NSAppleScript? = {
+        let source = """
+            tell application "System Events"
+                if not (exists process "Spotify") then return ""
+            end tell
+            tell application "Spotify"
+                if player state is playing then
+                    try
+                        return artwork url of current track
+                    end try
+                end if
+            end tell
+            return ""
+            """
         var err: NSDictionary?
-        let desc = compiledArtworkScript?.executeAndReturnError(&err)
-        guard err == nil, let data = desc?.data, !data.isEmpty else { return nil }
-        return NSImage(data: data)
+        let script = NSAppleScript(source: source)
+        script?.compileAndReturnError(&err)
+        return err == nil ? script : nil
+    }()
+
+    private nonisolated static func fetchArtworkSync(source: PlayerSource) -> NSImage? {
+        switch source {
+        case .appleMusic:
+            var err: NSDictionary?
+            let desc = compiledMusicArtworkScript?.executeAndReturnError(&err)
+            guard err == nil, let data = desc?.data, !data.isEmpty else { return nil }
+            return NSImage(data: data)
+        case .spotify:
+            var err: NSDictionary?
+            let desc = compiledSpotifyArtworkURLScript?.executeAndReturnError(&err)
+            guard err == nil,
+                  let urlString = desc?.stringValue,
+                  let url = URL(string: urlString),
+                  let data = try? Data(contentsOf: url),
+                  !data.isEmpty
+            else { return nil }
+            return NSImage(data: data)
+        }
     }
 }

@@ -4,6 +4,7 @@ import SwiftUI
 final class WindowManager: NSObject, NSWindowDelegate {
     private let panel: FloatingPanel
     private var savedHeight: CGFloat = 276
+    private var isResizingProgrammatically = false
 
     init(lyricsState: LyricsState, musicObserver: MusicObserver) {
         panel = FloatingPanel()
@@ -55,34 +56,73 @@ final class WindowManager: NSObject, NSWindowDelegate {
     }
 
     func setMinimized(_ minimized: Bool) {
-        let headerHeight: CGFloat = 52
+        let headerHeight = HumLayout.headerHeight
+        let targetHeight: CGFloat
         if minimized {
-            // Save current height before collapsing (only if not already minimized)
+            // Remember the expanded height before collapsing (skip if already collapsed).
             if panel.frame.height > headerHeight + 20 {
                 savedHeight = panel.frame.height
             }
-            let newFrame = CGRect(
-                x: panel.frame.minX,
-                y: panel.frame.maxY - headerHeight,
-                width: panel.frame.width,
-                height: headerHeight
-            )
-            panel.setFrame(newFrame, display: true, animate: true)
+            targetHeight = headerHeight
         } else {
-            let newFrame = CGRect(
-                x: panel.frame.minX,
-                y: panel.frame.maxY - savedHeight,
-                width: panel.frame.width,
-                height: savedHeight
-            )
-            panel.setFrame(newFrame, display: true, animate: true)
+            targetHeight = savedHeight
         }
+
+        // Top edge stays anchored: the bar collapses/expands from its bottom edge.
+        let targetFrame = CGRect(
+            x: panel.frame.minX,
+            y: panel.frame.maxY - targetHeight,
+            width: panel.frame.width,
+            height: targetHeight
+        )
+        animateResize(to: targetFrame)
+    }
+
+    // Gentle spring-like resize: glide a little *past* the target with momentum,
+    // then settle back onto it — a soft bounce instead of a flat ease. The overshoot
+    // is a small fixed amount (not proportional to travel) and clamped so it can
+    // never dip far enough to clip the header content. The flag keeps the transient
+    // animation frames from being persisted as the saved window frame.
+    private func animateResize(to target: NSRect) {
+        let anchorMaxY = panel.frame.maxY
+        let goingDown = target.height < panel.frame.height
+        let bounce: CGFloat = 7
+        let overshootHeight = max(
+            HumLayout.headerHeight - 8,
+            target.height + (goingDown ? -bounce : bounce)
+        )
+        let overshoot = CGRect(
+            x: target.minX,
+            y: anchorMaxY - overshootHeight,
+            width: target.width,
+            height: overshootHeight
+        )
+
+        isResizingProgrammatically = true
+        // Phase 1: ride to just beyond the target, decelerating.
+        NSAnimationContext.runAnimationGroup({ ctx in
+            ctx.duration = 0.28
+            ctx.timingFunction = CAMediaTimingFunction(name: .easeOut)
+            panel.animator().setFrame(overshoot, display: true)
+        }, completionHandler: { [weak self] in
+            guard let self else { return }
+            // Phase 2: settle back onto the target.
+            NSAnimationContext.runAnimationGroup({ ctx in
+                ctx.duration = 0.16
+                ctx.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+                self.panel.animator().setFrame(target, display: true)
+            }, completionHandler: { [weak self] in
+                self?.isResizingProgrammatically = false
+            })
+        })
     }
 
     func windowDidMove(_ notification: Notification) { saveFrame() }
     func windowDidResize(_ notification: Notification) { saveFrame() }
 
     private func saveFrame() {
+        // Ignore the transient frames emitted during the collapse/expand animation.
+        guard !isResizingProgrammatically else { return }
         // Don't save when window is in minimized state (header only)
         guard panel.frame.height > 80 else { return }
         UserDefaults.standard.set(NSStringFromRect(panel.frame), forKey: "windowFrame")
@@ -122,7 +162,7 @@ private final class FloatingPanel: NSPanel {
         hidesOnDeactivate = false
         isMovableByWindowBackground = true
         collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
-        minSize = CGSize(width: 200, height: 52)
+        minSize = CGSize(width: 200, height: HumLayout.headerHeight)
         acceptsMouseMovedEvents = true
     }
 
