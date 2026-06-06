@@ -1,6 +1,6 @@
 # Hum
 
-Floating karaoke lyrics for Apple Music — always on top, always in sync.
+Floating karaoke lyrics for Apple Music & Spotify — always on top, always in sync.
 
 ![Hum screenshot](docs/screenshot.png)
 
@@ -8,6 +8,7 @@ Floating karaoke lyrics for Apple Music — always on top, always in sync.
 
 ## Features
 
+- **Works with Apple Music & Spotify** — detects whichever app is playing automatically
 - **Real-time synced lyrics** — fetches timestamped lyrics from [LRCLIB](https://lrclib.net), auto-matched to the current track
 - **Floating window** — stays above every app, draggable, resizable
 - **Smooth karaoke scroll** — active line always centered, proximity fade on surrounding lines
@@ -22,7 +23,7 @@ Floating karaoke lyrics for Apple Music — always on top, always in sync.
 ## Requirements
 
 - macOS 15.0 (Sequoia) or later
-- Apple Music
+- Apple Music or Spotify
 
 ---
 
@@ -47,7 +48,7 @@ Download the latest `Hum.dmg` from [Releases](https://github.com/rzkarsyad/Hum/r
 ## Usage
 
 1. Open Hum — it appears as a **♪** icon in the menu bar, no Dock icon
-2. Play any track in Apple Music
+2. Play any track in Apple Music or Spotify
 3. The floating window appears automatically with synced lyrics
 4. **Hide** the window via the **👁** button or menu bar → Hide Lyrics
 5. **Show** it again via menu bar → Show Lyrics
