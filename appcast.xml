@@ -6,6 +6,29 @@
     <description>Hum update feed</description>
     <language>en</language>
     <item>
+      <title>Version 1.1.0</title>
+      <pubDate>Sat, 06 Jun 2026 10:51:48 +0000</pubDate>
+      <sparkle:version>2</sparkle:version>
+      <sparkle:shortVersionString>1.1.0</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>15.0</sparkle:minimumSystemVersion>
+      <description><![CDATA[
+        <h3>New</h3>
+        <ul>
+          <li>Instrumental dots — animated indicator filling gaps between sung lines</li>
+        </ul>
+        <h3>Fixes</h3>
+        <ul>
+          <li>Resize cursors now appear when hovering the floating panel's edges</li>
+          <li>Fixed an onboarding-window crash</li>
+        </ul>
+      ]]></description>
+      <enclosure
+        url="https://github.com/rzkarsyad/Hum/releases/download/v1.1.0/Hum-1.1.0.dmg"
+        sparkle:edSignature="99/KvtlvUN4UYoTHibn9IhuGhshspIweZfF0y/g9zPZnf9yZT4rK48SX2j+nKsIPTChoIVRKGCDkIlZ5gluYBw=="
+        length="3747824"
+        type="application/octet-stream"/>
+    </item>
+    <item>
       <title>Version 1.0.0</title>
       <pubDate>Mon, 19 May 2026 00:00:00 +0000</pubDate>
       <sparkle:version>1</sparkle:version>
