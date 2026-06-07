@@ -1,5 +1,13 @@
 import Foundation
 
+/// Normalize a title/artist for fuzzy comparison: case- and diacritic-insensitive,
+/// with collapsed whitespace. Used to safely match `/api/search` results.
+func normalizeForMatch(_ s: String) -> String {
+    s.folding(options: [.diacriticInsensitive, .caseInsensitive], locale: nil)
+        .split(whereSeparator: \.isWhitespace)
+        .joined(separator: " ")
+}
+
 struct LRCLIBSource: LyricsSource {
     func fetchSyncedLyrics(for track: Track) async -> String? {
         try? await fetchSyncedLyricsWithError(for: track).get()
