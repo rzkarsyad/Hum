@@ -7,3 +7,7 @@ xcuserdata/
 # Build / release artifacts
 build/
 dist/
+
+# Coverage + local probes (not part of the app)
+*.profraw
+check_mediaplayer2
