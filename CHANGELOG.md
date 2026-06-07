@@ -2,6 +2,12 @@
 
 All notable changes to Hum are documented here.
 
+## [Unreleased]
+
+### Changed
+
+- **Better lyric matching** — when an exact lookup misses, Hum now falls back to LRCLIB search and safely matches by title + artist (with a duration tiebreak), finding synced lyrics for many more tracks — especially those played in a browser, where album/duration metadata is often incomplete.
+
 ## [1.2.0] — 2026-06-07
 
 ### Added
