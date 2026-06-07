@@ -4,12 +4,14 @@ struct KaraokeView: View, Equatable {
     let items: [KaraokeItem]
     let active: Int?
     let fontSize: CGFloat
+    var translations: [Int: String] = [:]
     let musicObserver: MusicObserver
 
     // Equality intentionally excludes musicObserver: the dots subview observes it
     // directly, so KaraokeView's body only re-evaluates on structural changes.
     static func == (lhs: KaraokeView, rhs: KaraokeView) -> Bool {
-        lhs.items == rhs.items && lhs.active == rhs.active && lhs.fontSize == rhs.fontSize
+        lhs.items == rhs.items && lhs.active == rhs.active
+            && lhs.fontSize == rhs.fontSize && lhs.translations == rhs.translations
     }
 
     private var lineSpacing: CGFloat { 10 }
@@ -87,27 +89,39 @@ struct KaraokeView: View, Equatable {
     private func itemView(index: Int, item: KaraokeItem) -> some View {
         switch item {
         case .lyric(let line):
-            ZStack(alignment: .leading) {
-                Text(line.text)
-                    .font(.system(size: fontSize, weight: .bold))
-                    .foregroundColor(.white)
-                    .opacity(lineOpacity(for: index))
-                    .multilineTextAlignment(.leading)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-
-                if index == active {
+            VStack(alignment: .leading, spacing: 2) {
+                ZStack(alignment: .leading) {
                     Text(line.text)
-                        .customAttribute(EmphasisAttribute())
                         .font(.system(size: fontSize, weight: .bold))
                         .foregroundColor(.white)
+                        .opacity(lineOpacity(for: index))
                         .multilineTextAlignment(.leading)
                         .fixedSize(horizontal: false, vertical: true)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                        .transition(.asymmetric(
-                            insertion: AnyTransition(TextTransition(duration: lineDuration(for: index))),
-                            removal: .opacity.animation(.easeOut(duration: 0.15))
-                        ))
+
+                    if index == active {
+                        Text(line.text)
+                            .customAttribute(EmphasisAttribute())
+                            .font(.system(size: fontSize, weight: .bold))
+                            .foregroundColor(.white)
+                            .multilineTextAlignment(.leading)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .transition(.asymmetric(
+                                insertion: AnyTransition(TextTransition(duration: lineDuration(for: index))),
+                                removal: .opacity.animation(.easeOut(duration: 0.15))
+                            ))
+                    }
+                }
+
+                if let translation = translations[index], !translation.isEmpty {
+                    Text(translation)
+                        .font(.system(size: fontSize * 0.72, weight: .medium))
+                        .foregroundColor(.white)
+                        .opacity(lineOpacity(for: index) * 0.85)
+                        .multilineTextAlignment(.leading)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                 }
             }
         case .instrumental(let start, let end):

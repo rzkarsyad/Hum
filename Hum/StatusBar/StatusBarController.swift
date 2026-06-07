@@ -71,6 +71,15 @@ final class StatusBarController: NSObject {
         loginItem.target = self
         menu.addItem(loginItem)
 
+        let translationItem = NSMenuItem(
+            title: "Show Translation",
+            action: #selector(toggleTranslation(_:)),
+            keyEquivalent: ""
+        )
+        translationItem.state = lyricsState.showTranslation ? .on : .off
+        translationItem.target = self
+        menu.addItem(translationItem)
+
         menu.addItem(.separator())
 
         let checkUpdateItem = NSMenuItem(
@@ -107,6 +116,12 @@ final class StatusBarController: NSObject {
 
     @objc private func toggleLyricsVisibility() {
         lyricsState.isManuallyHidden = !lyricsState.isManuallyHidden
+    }
+
+    @objc private func toggleTranslation(_ item: NSMenuItem) {
+        lyricsState.showTranslation.toggle()
+        UserDefaults.standard.set(lyricsState.showTranslation, forKey: "humShowTranslation")
+        item.state = lyricsState.showTranslation ? .on : .off
     }
 
     private func observe() {
