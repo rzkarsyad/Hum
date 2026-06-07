@@ -70,4 +70,18 @@ final class LRCLIBSearchMatchTests: XCTestCase {
             bestSyncedMatch(results: results, title: "Curious", artist: "AND2BLE", duration: nil),
             "X")
     }
+
+    func test_match_prefixWithoutWordBoundaryRejected() {
+        // "Curious" is a char-prefix of "Curiosity" but NOT a whole-word prefix → reject.
+        let results = [r("Curiosity", "AND2BLE", 178, synced: "X")]
+        XCTAssertNil(bestSyncedMatch(results: results, title: "Curious", artist: "AND2BLE", duration: nil))
+    }
+
+    func test_match_isCaseAndDiacriticInsensitive() {
+        // Different casing + diacritics must still match via normalization.
+        let results = [r("CURIOUS", "Beyoncé", 178, synced: "MATCH")]
+        XCTAssertEqual(
+            bestSyncedMatch(results: results, title: "curious", artist: "Beyonce", duration: 178),
+            "MATCH")
+    }
 }
