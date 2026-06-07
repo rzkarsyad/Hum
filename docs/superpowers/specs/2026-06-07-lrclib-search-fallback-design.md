@@ -27,9 +27,11 @@ metadata from the browser (e.g., empty album) made `/api/get` miss songs that
    `syncedLyrics`. If a song has only `plainLyrics`, show nothing (unchanged
    behavior). No UI changes — Hum stays a synced-karaoke app.
 2. **Safe/strict matching.** A result is accepted only when its title *and*
-   artist match the track (normalized, case-insensitive, equal-or-contains).
-   Wrong lyrics are worse than no lyrics, so when nothing matches confidently we
-   return no lyrics.
+   artist match the track (normalized, case-insensitive, **equal or whole-word
+   prefix** — the shorter must start the longer at a word boundary). Wrong lyrics
+   are worse than no lyrics, so when nothing matches confidently we return no
+   lyrics. (A naive substring-contains was rejected: it would falsely accept
+   "Artist" as a match for "Other Artist".)
 3. **Approach A** — normalized title+artist gate + duration tiebreak (not scored
    ranking, not duration-anchored). Title+artist is the safety gate; duration
    only disambiguates among already-matching candidates and is optional.
@@ -64,12 +66,14 @@ New private method `searchRequest(title:artist:)`:
 - **`normalizeForMatch(_ s: String) -> String`** — lowercase, trim, fold
   diacritics (`folding(options: [.diacriticInsensitive, .caseInsensitive], …)`),
   collapse internal whitespace. No aggressive parenthetical stripping —
-  equal-or-contains handles common suffixes like "(Official Audio)".
+  the whole-word-prefix rule handles common suffixes like "(Official Audio)".
 - **`bestSyncedMatch(results:title:artist:duration:) -> String?`**
   1. Keep results with non-empty `syncedLyrics`.
-  2. Keep those where `normalizeForMatch(artist)` and the candidate's normalized
-     `artistName` are equal **or** one contains the other — and the same for
-     title vs `trackName`. (Both title and artist must pass.)
+  2. Keep those where title and artist each match: normalized values are equal,
+     **or** the shorter is a whole-word prefix of the longer (`longer.hasPrefix(
+     shorter)` and the next char is a space). Both title and artist must pass.
+     This matches "(Official Audio)"-style suffixes without falsely accepting
+     "Artist" for "Other Artist".
   3. If none remain → `nil`.
   4. If `duration` is provided → return the surviving candidate with the smallest
      `|duration − candidate.duration|`; otherwise → the first survivor.
@@ -112,7 +116,8 @@ struct LRCLIBSearchResult: Decodable {
   - candidate without `syncedLyrics` → skipped
   - no title/artist match → nil
   - missing track duration → first surviving match returned
-  - equal-or-contains: "Curious" matches "Curious (Sped Up)"
+  - whole-word prefix: "Curious" matches "Curious (Sped Up)"; "Artist" is
+    rejected for "Other Artist"
 
 **Manual / integration:**
 - A track known to fail `/api/get` but present via `/api/search` (e.g. a browser
