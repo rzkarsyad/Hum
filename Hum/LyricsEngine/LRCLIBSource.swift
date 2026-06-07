@@ -16,8 +16,11 @@ struct LRCLIBSearchResult: Decodable, Equatable {
 }
 
 /// Pick the best synced-lyrics result for a track, or nil if none match safely.
-/// A result qualifies only when both its title and artist match (normalized,
-/// equal-or-contains). Duration is used only to break ties among matches.
+/// A result qualifies only when both its title and artist match (normalized):
+/// equal, or the shorter is a whole-word prefix of the longer (so "(Official
+/// Audio)"-style suffixes match, but "Artist" does not match "Other Artist").
+/// When `duration` is given it breaks ties; without it, the first qualifying
+/// result wins.
 func bestSyncedMatch(results: [LRCLIBSearchResult], title: String, artist: String, duration: TimeInterval?) -> String? {
     func matches(_ a: String, _ b: String) -> Bool {
         let na = normalizeForMatch(a), nb = normalizeForMatch(b)
