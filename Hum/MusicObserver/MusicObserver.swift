@@ -92,6 +92,11 @@ final class MusicObserver: ObservableObject {
         RunLoop.main.add(display, forMode: .common)
         displayTimer = display
 
+        // Wake the poll immediately when browser now-playing changes, so the
+        // window appears on play without waiting for the next 0.5s tick.
+        browserSource.onUpdate = { [weak self] in
+            Task { @MainActor [weak self] in self?.schedulePoll() }
+        }
         browserSource.start()
     }
 
