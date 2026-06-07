@@ -53,7 +53,24 @@ struct LRCLIBSource: LyricsSource {
     func fetchSyncedLyricsWithError(for track: Track) async -> Result<String?, Error> {
         let first = await request(title: track.title, artist: track.artist, album: track.album, duration: track.duration)
         if case .success(let s) = first, let r = s, !r.isEmpty { return .success(r) }
-        return await request(title: track.title, artist: track.artist, album: nil, duration: track.duration)
+
+        let second = await request(title: track.title, artist: track.artist, album: nil, duration: track.duration)
+        if case .success(let s) = second, let r = s, !r.isEmpty { return .success(r) }
+
+        // Fallback: fuzzy /api/search, then a safe title+artist match.
+        let search = await searchRequest(title: track.title, artist: track.artist)
+        switch search {
+        case .success(let results):
+            if let matched = bestSyncedMatch(results: results, title: track.title, artist: track.artist, duration: track.duration),
+               !matched.isEmpty {
+                return .success(matched)
+            }
+            // No confident match. Preserve a network error from the 2nd get, else "not found".
+            if case .failure(let e) = second { return .failure(e) }
+            return .success(nil)
+        case .failure(let e):
+            return .failure(e)
+        }
     }
 
     private func request(title: String, artist: String, album: String?, duration: TimeInterval?) async -> Result<String?, Error> {
@@ -79,6 +96,27 @@ struct LRCLIBSource: LyricsSource {
             guard let http = response as? HTTPURLResponse, http.statusCode == 200 else { return .success(nil) }
             let json = try JSONDecoder().decode(LRCLIBResponse.self, from: data)
             return .success(json.syncedLyrics)
+        } catch {
+            return .failure(error)
+        }
+    }
+
+    private func searchRequest(title: String, artist: String) async -> Result<[LRCLIBSearchResult], Error> {
+        var components = URLComponents(string: "https://lrclib.net/api/search")!
+        components.queryItems = [
+            URLQueryItem(name: "track_name", value: title),
+            URLQueryItem(name: "artist_name", value: artist),
+        ]
+        guard let url = components.url else { return .success([]) }
+
+        var req = URLRequest(url: url, timeoutInterval: 10)
+        req.setValue("Hum macOS app", forHTTPHeaderField: "User-Agent")
+
+        do {
+            let (data, response) = try await URLSession.shared.data(for: req)
+            guard let http = response as? HTTPURLResponse, http.statusCode == 200 else { return .success([]) }
+            let results = try JSONDecoder().decode([LRCLIBSearchResult].self, from: data)
+            return .success(results)
         } catch {
             return .failure(error)
         }
