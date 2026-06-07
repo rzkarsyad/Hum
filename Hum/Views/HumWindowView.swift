@@ -1,4 +1,5 @@
 import SwiftUI
+import Translation
 
 /// Shared layout constants. The header height is the single source of truth for
 /// both the SwiftUI header and the minimized window height (WindowManager) so the
@@ -10,6 +11,10 @@ enum HumLayout {
 struct HumWindowView: View {
     @ObservedObject var lyricsState: LyricsState
     @ObservedObject var musicObserver: MusicObserver
+
+    /// Drives the on-device translation task. Non-nil only when translation is on
+    /// and lyrics exist; invalidated to re-translate on track change.
+    @State private var translationConfig: TranslationSession.Configuration?
 
     var body: some View {
         // Computed once per body pass (body re-runs at 60fps via musicObserver):
@@ -46,6 +51,7 @@ struct HumWindowView: View {
                         items: items,
                         active: activeItem,
                         fontSize: lyricsState.fontSize,
+                        translations: lyricsState.translations,
                         musicObserver: musicObserver
                     )
                     .equatable()
@@ -58,6 +64,58 @@ struct HumWindowView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .clipShape(RoundedRectangle(cornerRadius: 16))
+        .translationTask(translationConfig) { session in
+            await runTranslation(session)
+        }
+        .onChange(of: lyricsState.showTranslation) { _, _ in refreshTranslationConfig() }
+        .onChange(of: musicObserver.currentTrack?.title) { _, _ in refreshTranslationConfig() }
+        .onChange(of: lyricsState.lines.count) { _, _ in refreshTranslationConfig() }
+    }
+
+    // MARK: - Translation
+
+    /// Build/refresh/clear the translation configuration based on the toggle and
+    /// whether there are lyrics. Invalidating an existing config re-runs the task
+    /// for the new track's lines.
+    private func refreshTranslationConfig() {
+        guard lyricsState.showTranslation, !lyricsState.lines.isEmpty else {
+            translationConfig = nil
+            lyricsState.translations = [:]
+            return
+        }
+        lyricsState.translations = [:]
+        if translationConfig == nil {
+            translationConfig = TranslationSession.Configuration(source: nil, target: Locale.current.language)
+        } else {
+            translationConfig?.invalidate()
+        }
+    }
+
+    /// Translate all lyric lines in one batch and store results keyed by their
+    /// KaraokeItem index (so the view can render each under its line).
+    private func runTranslation(_ session: TranslationSession) async {
+        let items = buildItems(from: lyricsState.lines)
+        let lineItems: [(Int, String)] = items.enumerated().compactMap { index, item in
+            if case .lyric(let line) = item { return (index, line.text) }
+            return nil
+        }
+        guard !lineItems.isEmpty else { return }
+
+        let requests = lineItems.map {
+            TranslationSession.Request(sourceText: $0.1, clientIdentifier: String($0.0))
+        }
+        do {
+            let responses = try await session.translations(from: requests)
+            var map: [Int: String] = [:]
+            for response in responses {
+                if let id = response.clientIdentifier, let index = Int(id) {
+                    map[index] = response.targetText
+                }
+            }
+            lyricsState.translations = map
+        } catch {
+            lyricsState.translations = [:]
+        }
     }
 
     // Collapse + hide controls as Liquid Glass buttons (macOS 26+), grouped in a
