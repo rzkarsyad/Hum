@@ -100,9 +100,15 @@ func classifyNowPlaying(_ obj: [String: Any]) -> BrowserParse {
 /// browser now-playing snapshot. Thread-safe; safe to call `current(now:)` from
 /// the main actor. Degrades silently if the adapter is unavailable.
 final class BrowserMediaSource {
+    /// Fired (on a background queue) when the playing track or play-state changes,
+    /// so the observer can pick up the new now-playing immediately instead of
+    /// waiting for the next poll tick.
+    var onUpdate: (() -> Void)?
+
     private let lock = NSLock()
     private var snapshot: BrowserSnapshot?
     private var receivedAt = Date()
+    private var lastNotifiedKey: String?
 
     private var process: Process?
     private var buffer = Data()
@@ -208,11 +214,24 @@ final class BrowserMediaSource {
             switch parseBrowserNowPlaying(line) {
             case .browser(let s):
                 lock.lock(); snapshot = s; receivedAt = Date(); lock.unlock()
+                notifyIfChanged(key: "\(s.bundleID)|\(s.title)|\(s.isPlaying)")
             case .other:
                 lock.lock(); snapshot = nil; lock.unlock()
+                notifyIfChanged(key: "")
             case .ignore:
                 break  // keep previous state
             }
         }
+    }
+
+    /// Invoke `onUpdate` only when the track/play-state identity actually changes,
+    /// so an immediate re-poll fires on play/track changes without spamming on
+    /// every (e.g. artwork-only) stream emit.
+    private func notifyIfChanged(key: String) {
+        lock.lock()
+        let changed = key != lastNotifiedKey
+        lastNotifiedKey = key
+        lock.unlock()
+        if changed { onUpdate?() }
     }
 }
