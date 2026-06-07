@@ -1,6 +1,6 @@
 import Foundation
 
-struct LyricLine: Equatable {
+struct LyricLine: Equatable, Codable {
     let timestamp: TimeInterval
     let text: String
 }

@@ -11,8 +11,15 @@ final class LyricsEngineTests: XCTestCase {
     private let track = Track(title: "Test", artist: "Artist", album: "Album")
     private let sampleLRC = "[00:01.00] Hello\n[00:02.00] World"
 
+    /// Isolated on-disk cache per use so tests never touch the real cache dir or
+    /// each other's state.
+    private func tempCache() -> LyricsDiskCache {
+        LyricsDiskCache(directory: FileManager.default.temporaryDirectory
+            .appendingPathComponent("HumLE-\(UUID().uuidString)"))
+    }
+
     func test_returnsParsedLinesOnSuccess() async {
-        let engine = LyricsEngine(primary: MockSource(result: sampleLRC), fallback: MockSource(result: nil))
+        let engine = LyricsEngine(primary: MockSource(result: sampleLRC), fallback: MockSource(result: nil), diskCache: tempCache())
         let result = await engine.fetch(for: track)
         guard case .found(let lines) = result else { return XCTFail("Expected .found") }
         XCTAssertEqual(lines.count, 2)
@@ -20,14 +27,14 @@ final class LyricsEngineTests: XCTestCase {
     }
 
     func test_fallsBackWhenPrimaryReturnsNil() async {
-        let engine = LyricsEngine(primary: MockSource(result: nil), fallback: MockSource(result: sampleLRC))
+        let engine = LyricsEngine(primary: MockSource(result: nil), fallback: MockSource(result: sampleLRC), diskCache: tempCache())
         let result = await engine.fetch(for: track)
         guard case .found(let lines) = result else { return XCTFail("Expected .found") }
         XCTAssertEqual(lines.count, 2)
     }
 
     func test_returnsEmptyWhenBothSourcesFail() async {
-        let engine = LyricsEngine(primary: MockSource(result: nil), fallback: MockSource(result: nil))
+        let engine = LyricsEngine(primary: MockSource(result: nil), fallback: MockSource(result: nil), diskCache: tempCache())
         let result = await engine.fetch(for: track)
         if case .found(let lines) = result {
             XCTFail("Expected notFound or networkError, got .found(\(lines))")
@@ -43,7 +50,7 @@ final class LyricsEngineTests: XCTestCase {
                 return "[00:01.00] Cached"
             }
         }
-        let engine = LyricsEngine(primary: CountingSource { callCount += 1 }, fallback: MockSource(result: nil))
+        let engine = LyricsEngine(primary: CountingSource { callCount += 1 }, fallback: MockSource(result: nil), diskCache: tempCache())
         _ = await engine.fetch(for: track)
         _ = await engine.fetch(for: track)
         XCTAssertEqual(callCount, 1)
@@ -58,7 +65,7 @@ final class LyricsEngineTests: XCTestCase {
                 return "[00:01.00] Line"
             }
         }
-        let engine = LyricsEngine(primary: CountingSource { callCount += 1 }, fallback: MockSource(result: nil))
+        let engine = LyricsEngine(primary: CountingSource { callCount += 1 }, fallback: MockSource(result: nil), diskCache: tempCache())
         _ = await engine.fetch(for: Track(title: "A", artist: "B", album: "C"))
         _ = await engine.fetch(for: Track(title: "X", artist: "Y", album: "Z"))
         XCTAssertEqual(callCount, 2)
@@ -66,7 +73,7 @@ final class LyricsEngineTests: XCTestCase {
 
     func test_usesMediaItemLyricsWhenProvided() async {
         let lrc = "[00:01.00] From device\n[00:02.00] Library"
-        let engine = LyricsEngine(primary: MockSource(result: nil), fallback: MockSource(result: nil))
+        let engine = LyricsEngine(primary: MockSource(result: nil), fallback: MockSource(result: nil), diskCache: tempCache())
         let result = await engine.fetch(for: track, mediaItemLyrics: lrc)
         guard case .found(let lines) = result else { return XCTFail("Expected .found") }
         XCTAssertEqual(lines.count, 2)
@@ -74,7 +81,7 @@ final class LyricsEngineTests: XCTestCase {
     }
 
     func test_fallsBackToSourcesWhenMediaItemLyricsNil() async {
-        let engine = LyricsEngine(primary: MockSource(result: nil), fallback: MockSource(result: sampleLRC))
+        let engine = LyricsEngine(primary: MockSource(result: nil), fallback: MockSource(result: sampleLRC), diskCache: tempCache())
         let result = await engine.fetch(for: track, mediaItemLyrics: nil)
         guard case .found(let lines) = result else { return XCTFail("Expected .found") }
         XCTAssertEqual(lines.count, 2)
@@ -83,10 +90,30 @@ final class LyricsEngineTests: XCTestCase {
     func test_mediaItemLyricsTakesPrecedenceOverPrimary() async {
         let fromDevice = "[00:01.00] Device line"
         let fromNetwork = "[00:01.00] Network line"
-        let engine = LyricsEngine(primary: MockSource(result: fromNetwork), fallback: MockSource(result: nil))
+        let engine = LyricsEngine(primary: MockSource(result: fromNetwork), fallback: MockSource(result: nil), diskCache: tempCache())
         let result = await engine.fetch(for: track, mediaItemLyrics: fromDevice)
         guard case .found(let lines) = result else { return XCTFail("Expected .found") }
         XCTAssertEqual(lines[0].text, "Device line")
+    }
+
+    func test_diskCachePersistsAcrossEngineInstances() async {
+        let cache = tempCache()
+        let engine1 = LyricsEngine(primary: MockSource(result: sampleLRC), fallback: MockSource(result: nil), diskCache: cache)
+        _ = await engine1.fetch(for: track)
+
+        // A fresh engine with sources that return nothing must still find the
+        // lyrics on disk (simulating a relaunch).
+        let engine2 = LyricsEngine(primary: MockSource(result: nil), fallback: MockSource(result: nil), diskCache: cache)
+        let result = await engine2.fetch(for: track)
+        guard case .found(let lines) = result else { return XCTFail("Expected .found from disk") }
+        XCTAssertEqual(lines.count, 2)
+    }
+
+    func test_notFoundIsNotPersistedToDisk() async {
+        let cache = tempCache()
+        let engine = LyricsEngine(primary: MockSource(result: nil), fallback: MockSource(result: nil), diskCache: cache)
+        _ = await engine.fetch(for: track)  // notFound
+        XCTAssertNil(cache.load(forKey: lyricsCacheKey(for: track)))
     }
 }
 
