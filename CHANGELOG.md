@@ -7,6 +7,8 @@ All notable changes to Hum are documented here.
 ### Changed
 
 - **Better lyric matching** — when an exact lookup misses, Hum now falls back to LRCLIB search and safely matches by title + artist (with a duration tiebreak), finding synced lyrics for many more tracks — especially those played in a browser, where album/duration metadata is often incomplete.
+- **Lyrics cached to disk** — fetched lyrics now persist across launches, so replaying a track shows lyrics instantly without re-fetching.
+- **Snappier browser detection** — the lyrics window now appears the moment browser playback starts, instead of waiting for the next poll tick.
 
 ## [1.2.0] — 2026-06-07
 
