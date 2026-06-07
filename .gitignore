@@ -11,3 +11,7 @@ dist/
 # Coverage + local probes (not part of the app)
 *.profraw
 check_mediaplayer2
+
+# Local tooling state (Claude Code / superpowers)
+.claude/
+.superpowers/
