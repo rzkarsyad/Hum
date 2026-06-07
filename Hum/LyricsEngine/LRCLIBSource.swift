@@ -8,6 +8,40 @@ func normalizeForMatch(_ s: String) -> String {
         .joined(separator: " ")
 }
 
+struct LRCLIBSearchResult: Decodable, Equatable {
+    let trackName: String
+    let artistName: String
+    let duration: Double?
+    let syncedLyrics: String?
+}
+
+/// Pick the best synced-lyrics result for a track, or nil if none match safely.
+/// A result qualifies only when both its title and artist match (normalized,
+/// equal-or-contains). Duration is used only to break ties among matches.
+func bestSyncedMatch(results: [LRCLIBSearchResult], title: String, artist: String, duration: TimeInterval?) -> String? {
+    func matches(_ a: String, _ b: String) -> Bool {
+        let na = normalizeForMatch(a), nb = normalizeForMatch(b)
+        guard !na.isEmpty, !nb.isEmpty else { return false }
+        if na == nb { return true }
+        // Word-boundary-aware prefix containment: the shorter must start the longer.
+        let (shorter, longer) = na.count <= nb.count ? (na, nb) : (nb, na)
+        return longer.hasPrefix(shorter) &&
+            (longer.count == shorter.count || longer[longer.index(longer.startIndex, offsetBy: shorter.count)] == " ")
+    }
+
+    let candidates = results.filter {
+        guard let synced = $0.syncedLyrics, !synced.isEmpty else { return false }
+        return matches($0.trackName, title) && matches($0.artistName, artist)
+    }
+    guard !candidates.isEmpty else { return nil }
+
+    guard let duration else { return candidates.first?.syncedLyrics }
+    return candidates.min {
+        abs(($0.duration ?? .greatestFiniteMagnitude) - duration) <
+        abs(($1.duration ?? .greatestFiniteMagnitude) - duration)
+    }?.syncedLyrics
+}
+
 struct LRCLIBSource: LyricsSource {
     func fetchSyncedLyrics(for track: Track) async -> String? {
         try? await fetchSyncedLyricsWithError(for: track).get()
