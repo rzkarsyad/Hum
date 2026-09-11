@@ -44,6 +44,88 @@ func parsePollResult(_ raw: String) -> PollOutcome {
     }
 }
 
+/// A media player Hum can read over AppleScript, listed in priority order.
+enum ScriptablePlayer: String, CaseIterable, Equatable {
+    case appleMusic = "music"
+    case spotify = "spotify"
+
+    /// Process name as reported by System Events; also the `tell application` name.
+    var appName: String {
+        switch self {
+        case .appleMusic: return "Music"
+        case .spotify: return "Spotify"
+        }
+    }
+
+    var source: PlayerSource {
+        switch self {
+        case .appleMusic: return .appleMusic
+        case .spotify: return .spotify
+        }
+    }
+}
+
+/// Script that reports which player processes are currently running, as a
+/// tab-separated list of `ScriptablePlayer` raw values.
+///
+/// It only ever *tells* System Events — which ships with macOS — and probes the
+/// players by process name, which needs no terminology from the players
+/// themselves. That keeps this script compilable on any Mac, whatever the user
+/// has installed.
+func runningPlayersScriptSource(_ players: [ScriptablePlayer]) -> String {
+    let probes = players
+        .map { "        if (exists process \"\($0.appName)\") then set out to out & \"\($0.rawValue)\" & tab" }
+        .joined(separator: "\n")
+    return """
+        set out to ""
+        tell application "System Events"
+        \(probes)
+        end tell
+        return out
+        """
+}
+
+/// Poll script for a single player, in the tab-separated format `parsePollResult`
+/// expects.
+///
+/// One script per player, never a combined one: `tell application "X"` makes
+/// AppleScript resolve X's scripting terminology at *compile* time, so a
+/// combined script cannot be compiled on a Mac that is missing any one of the
+/// players — which would take the installed players down with it. Compile this
+/// only once the player's process is actually seen running.
+func pollScriptSource(for player: ScriptablePlayer) -> String {
+    // Spotify reports duration in milliseconds; Apple Music in seconds.
+    let duration = player == .spotify
+        ? "(((duration of t) / 1000) as string)"
+        : "(duration of t as string)"
+    return """
+        tell application "\(player.appName)"
+            if player state is playing then
+                set t to current track
+                return "playing\t\(player.rawValue)\t" & (name of t) & "\t" & (artist of t) & "\t" & (album of t) & "\t" & (player position as string) & "\t" & \(duration)
+            else if player state is paused then
+                return "paused"
+            end if
+        end tell
+        return "stopped"
+        """
+}
+
+/// Parses the running-players probe output into players, in priority order.
+func parseRunningPlayers(_ raw: String) -> [ScriptablePlayer] {
+    let tags = Set(raw.components(separatedBy: "\t").filter { !$0.isEmpty })
+    return ScriptablePlayer.allCases.filter { tags.contains($0.rawValue) }
+}
+
+/// Collapses the per-player outcomes into one: the first player that is actually
+/// playing wins, otherwise a paused player, otherwise stopped.
+func mergePlayerOutcomes(_ outcomes: [PollOutcome]) -> PollOutcome {
+    if let playing = outcomes.first(where: { if case .playing = $0 { return true } else { return false } }) {
+        return playing
+    }
+    return outcomes.contains(.paused) ? .paused : .stopped
+}
+
 /// Combine the AppleScript outcome (Apple Music / Spotify) with the latest
 /// browser snapshot. Priority: a *playing* Apple Music / Spotify always wins;
 /// otherwise a *playing* browser wins; otherwise reflect the AppleScript state.
@@ -113,17 +195,17 @@ final class MusicObserver: ObservableObject {
         let baseD = baseDate
 
         pollQueue.async { [weak self] in
-            guard let result = Self.executePollScript() else { return }
+            guard let outcome = Self.pollPlayers() else { return }
             Task { @MainActor [weak self] in
-                self?.applyPollResult(result, prePollDate: prePollDate, basePos: basePos, baseD: baseD)
+                self?.applyPollResult(outcome, prePollDate: prePollDate, basePos: basePos, baseD: baseD)
             }
         }
     }
 
-    private func applyPollResult(_ result: String, prePollDate: Date, basePos: TimeInterval, baseD: Date) {
+    private func applyPollResult(_ players: PollOutcome, prePollDate: Date, basePos: TimeInterval, baseD: Date) {
         let browser = browserSource.current(now: prePollDate)
         let outcome = mergeOutcome(
-            appleScript: parsePollResult(result),
+            appleScript: players,
             browser: browser?.snapshot,
             browserPosition: browser?.position ?? 0
         )
@@ -169,65 +251,55 @@ final class MusicObserver: ObservableObject {
         playbackPosition = basePosition + Date().timeIntervalSince(baseDate)
     }
 
-    // MARK: - Poll script (background)
+    // MARK: - Poll scripts (background)
 
-    // Polls Apple Music and Spotify in a single pass. Apple Music takes priority
-    // when both are playing. `exists process` guards ensure we never *launch*
-    // either app — `tell application "X"` alone would auto-launch it.
-    // Spotify reports duration in milliseconds, so it is normalized to seconds.
-    private nonisolated static let pollScriptSource = """
-        set musicRunning to false
-        set spotifyRunning to false
-        tell application "System Events"
-            if (exists process "Music") then set musicRunning to true
-            if (exists process "Spotify") then set spotifyRunning to true
-        end tell
-
-        if musicRunning then
-            tell application "Music"
-                if player state is playing then
-                    set t to current track
-                    return "playing\tmusic\t" & (name of t) & "\t" & (artist of t) & "\t" & (album of t) & "\t" & (player position as string) & "\t" & (duration of t as string)
-                end if
-            end tell
-        end if
-
-        if spotifyRunning then
-            tell application "Spotify"
-                if player state is playing then
-                    set t to current track
-                    return "playing\tspotify\t" & (name of t) & "\t" & (artist of t) & "\t" & (album of t) & "\t" & (player position as string) & "\t" & (((duration of t) / 1000) as string)
-                end if
-            end tell
-        end if
-
-        if musicRunning then
-            tell application "Music"
-                if player state is paused then return "paused"
-            end tell
-        end if
-
-        if spotifyRunning then
-            tell application "Spotify"
-                if player state is paused then return "paused"
-            end tell
-        end if
-
-        return "stopped"
-        """
-
+    // The running-players probe only talks to System Events, so it compiles on
+    // every Mac regardless of which players are installed.
     // Only ever executed on serial pollQueue — nonisolated(unsafe) is safe here.
-    private nonisolated(unsafe) static let compiledPollScript: NSAppleScript? = {
+    private nonisolated(unsafe) static let compiledRunningPlayersScript: NSAppleScript? = {
         var err: NSDictionary?
-        let script = NSAppleScript(source: pollScriptSource)
+        let script = NSAppleScript(source: runningPlayersScriptSource(ScriptablePlayer.allCases))
         script?.compileAndReturnError(&err)
         return err == nil ? script : nil
     }()
 
-    private nonisolated static func executePollScript() -> String? {
+    // Per-player scripts, compiled on first sight of that player's process — if
+    // the process is running the app is installed, so AppleScript can always
+    // resolve its terminology. Compiling a script for a *missing* app would pop
+    // the "Where is …?" chooser panel or fail outright, so we never do it.
+    // A stored nil records a failed compile so it is not retried every poll.
+    // Only ever touched on serial pollQueue — nonisolated(unsafe) is safe here.
+    private nonisolated(unsafe) static var compiledPlayerScripts: [ScriptablePlayer: NSAppleScript?] = [:]
+
+    private nonisolated static func playerScript(for player: ScriptablePlayer) -> NSAppleScript? {
+        if let cached = compiledPlayerScripts[player] { return cached }
         var err: NSDictionary?
-        let result = compiledPollScript?.executeAndReturnError(&err)
-        return err == nil ? result?.stringValue : nil
+        let script = NSAppleScript(source: pollScriptSource(for: player))
+        script?.compileAndReturnError(&err)
+        let compiled = err == nil ? script : nil
+        compiledPlayerScripts[player] = compiled
+        return compiled
+    }
+
+    private nonisolated static func run(_ script: NSAppleScript) -> String? {
+        var err: NSDictionary?
+        let result = script.executeAndReturnError(&err)
+        return err == nil ? result.stringValue : nil
+    }
+
+    /// Polls each *running* player in priority order, stopping at the first one
+    /// that is playing. Returns nil when the probe itself failed, so the caller
+    /// can skip the tick instead of reporting a spurious stop.
+    private nonisolated static func pollPlayers() -> PollOutcome? {
+        guard let probe = compiledRunningPlayersScript, let raw = run(probe) else { return nil }
+        var outcomes: [PollOutcome] = []
+        for player in parseRunningPlayers(raw) {
+            guard let script = playerScript(for: player), let out = run(script) else { continue }
+            let outcome = parsePollResult(out)
+            if case .playing = outcome { return outcome }
+            outcomes.append(outcome)
+        }
+        return mergePlayerOutcomes(outcomes)
     }
 
     // MARK: - Artwork (background, cancellable via generation counter)
