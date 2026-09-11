@@ -2,29 +2,29 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-    <key>LSUIElement</key>
-    <true/>
-    <key>NSAppleEventsUsageDescription</key>
-    <string>Hum reads your currently playing track from Apple Music and Spotify to display lyrics.</string>
-    <key>NSAppleMediaLibraryUsageDescription</key>
-    <string>Hum accesses your music library to display synced lyrics.</string>
-    <key>CFBundleName</key>
-    <string>Hum</string>
-    <key>CFBundleExecutable</key>
-    <string>$(EXECUTABLE_NAME)</string>
-    <key>CFBundleIdentifier</key>
-    <string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
-    <key>CFBundleVersion</key>
-    <string>3</string>
-    <key>CFBundleShortVersionString</key>
-    <string>1.2.0</string>
-    <key>LSMinimumSystemVersion</key>
-    <string>15.0</string>
-    <key>SUFeedURL</key>
-    <string>https://raw.githubusercontent.com/rzkarsyad/Hum/main/appcast.xml</string>
-    <key>SUPublicEDKey</key>
-    <string>grYy1Fol3uhUrSOTdeh4LVr1gRvCtOD3QmEH27Q6Rjg=</string>
-    <key>SUEnableAutomaticChecks</key>
-    <true/>
+	<key>CFBundleExecutable</key>
+	<string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleName</key>
+	<string>Hum</string>
+	<key>CFBundleShortVersionString</key>
+	<string>1.3.0</string>
+	<key>CFBundleVersion</key>
+	<string>4</string>
+	<key>LSMinimumSystemVersion</key>
+	<string>15.0</string>
+	<key>LSUIElement</key>
+	<true/>
+	<key>NSAppleEventsUsageDescription</key>
+	<string>Hum reads your currently playing track from Apple Music and Spotify to display lyrics.</string>
+	<key>NSAppleMediaLibraryUsageDescription</key>
+	<string>Hum accesses your music library to display synced lyrics.</string>
+	<key>SUEnableAutomaticChecks</key>
+	<true/>
+	<key>SUFeedURL</key>
+	<string>https://raw.githubusercontent.com/rzkarsyad/Hum/main/appcast.xml</string>
+	<key>SUPublicEDKey</key>
+	<string>grYy1Fol3uhUrSOTdeh4LVr1gRvCtOD3QmEH27Q6Rjg=</string>
 </dict>
 </plist>
