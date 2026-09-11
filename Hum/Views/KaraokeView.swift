@@ -36,6 +36,20 @@ struct KaraokeView: View, Equatable {
         }
     }
 
+    /// The active line reads as full white via the emphasised overlay drawn on
+    /// top of it, not via `lineOpacity` (which stays dim at 0.3). Reusing that
+    /// value for the translation would leave the one line you actually want to
+    /// read as the faintest thing on screen, so translations get their own ramp.
+    private func translationOpacity(for index: Int) -> Double {
+        guard let active else { return 0.12 }
+        switch abs(index - active) {
+        case 0: return 0.9
+        case 1: return 0.35
+        case 2: return 0.2
+        default: return 0.1
+        }
+    }
+
     private func lineScale(for index: Int) -> CGFloat {
         index == active ? 1.0 : 0.96
     }
@@ -118,7 +132,7 @@ struct KaraokeView: View, Equatable {
                     Text(translation)
                         .font(.system(size: fontSize * 0.72, weight: .medium))
                         .foregroundColor(.white)
-                        .opacity(lineOpacity(for: index) * 0.85)
+                        .opacity(translationOpacity(for: index))
                         .multilineTextAlignment(.leading)
                         .fixedSize(horizontal: false, vertical: true)
                         .frame(maxWidth: .infinity, alignment: .leading)
