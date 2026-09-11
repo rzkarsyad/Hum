@@ -16,3 +16,6 @@ check_mediaplayer2
 .claude/
 .superpowers/
 .codex/
+
+# Marketing site (separate work in progress)
+site/
