@@ -1,6 +1,32 @@
 import SwiftUI
 import Translation
 
+/// Keeps only the translations that actually add something.
+///
+/// The Translation framework auto-detects the source language, and when the
+/// lyrics are already in the device's language it simply echoes the line back.
+/// Rendering that under every line would just print the lyrics twice, so any
+/// result that matches its source (ignoring case, whitespace and punctuation)
+/// is dropped.
+func usefulTranslations(_ pairs: [(index: Int, source: String, translated: String)]) -> [Int: String] {
+    var map: [Int: String] = [:]
+    for pair in pairs {
+        let translated = pair.translated.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !translated.isEmpty, !sameLine(translated, pair.source) else { continue }
+        map[pair.index] = translated
+    }
+    return map
+}
+
+private func sameLine(_ a: String, _ b: String) -> Bool {
+    func key(_ s: String) -> String {
+        s.lowercased().unicodeScalars
+            .filter { CharacterSet.alphanumerics.contains($0) }
+            .reduce(into: "") { $0.unicodeScalars.append($1) }
+    }
+    return key(a) == key(b)
+}
+
 /// Shared layout constants. The header height is the single source of truth for
 /// both the SwiftUI header and the minimized window height (WindowManager) so the
 /// collapsed bar matches the header exactly and never clips its content.
@@ -104,16 +130,22 @@ struct HumWindowView: View {
         let requests = lineItems.map {
             TranslationSession.Request(sourceText: $0.1, clientIdentifier: String($0.0))
         }
+        // A translation batch outlives a track change, and a cancelled task must
+        // not wipe (or a late one overwrite) the next track's lines — so only
+        // publish while the track we started on is still the one playing.
+        let startedOn = musicObserver.currentTrack
+        let sources = Dictionary(uniqueKeysWithValues: lineItems)
         do {
             let responses = try await session.translations(from: requests)
-            var map: [Int: String] = [:]
-            for response in responses {
-                if let id = response.clientIdentifier, let index = Int(id) {
-                    map[index] = response.targetText
-                }
+            guard musicObserver.currentTrack == startedOn else { return }
+            let pairs = responses.compactMap { response -> (index: Int, source: String, translated: String)? in
+                guard let id = response.clientIdentifier, let index = Int(id),
+                      let source = sources[index] else { return nil }
+                return (index, source, response.targetText)
             }
-            lyricsState.translations = map
+            lyricsState.translations = usefulTranslations(pairs)
         } catch {
+            guard !(error is CancellationError), musicObserver.currentTrack == startedOn else { return }
             lyricsState.translations = [:]
         }
     }

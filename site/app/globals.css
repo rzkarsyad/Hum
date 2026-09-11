@@ -1,0 +1,95 @@
+@import "tailwindcss";
+
+@theme {
+  /* Ink */
+  --color-ink: #0b0b0f;
+  --color-ink-2: #55555c;
+  --color-ink-3: #8a8a91;
+
+  /* Paper */
+  --color-paper: #fbfbfd;
+  --color-paper-2: #f3f3f6;
+  --color-hairline: rgba(9, 9, 16, 0.08);
+
+  /* Brand — lifted from the app icon */
+  --color-brand: #0a84ff;
+  --color-brand-2: #5ac8fa;
+  --color-brand-3: #0060df;
+
+  /* ui-rounded gives genuine SF Pro Rounded in Safari on Apple platforms.
+     Nunito is the self-hosted fallback everywhere else. */
+  --font-rounded: ui-rounded, "SF Pro Rounded", var(--font-nunito), system-ui, sans-serif;
+  --font-code: ui-monospace, "SF Mono", SFMono-Regular, Menlo, monospace;
+
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    background: var(--color-paper);
+    color: var(--color-ink);
+    font-family: var(--font-rounded);
+    font-synthesis-weight: none;
+  }
+
+  ::selection {
+    background: color-mix(in srgb, var(--color-brand) 22%, transparent);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-brand);
+    outline-offset: 3px;
+    border-radius: 6px;
+  }
+}
+
+@utility headline {
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  line-height: 1;
+}
+
+/* ---- Karaoke character reveal -------------------------------------------
+   Mirrors AppearanceEffectRenderer in Hum/Views/TextEffects.swift: each glyph
+   eases in from blurred and slightly low, staggered across the line's duration. */
+@keyframes hum-char-in {
+  from {
+    opacity: 0;
+    filter: blur(0.42em);
+    transform: translateY(0.2em);
+  }
+  55% {
+    opacity: 1;
+  }
+  to {
+    opacity: 1;
+    filter: blur(0);
+    transform: translateY(0);
+  }
+}
+
+.hum-char {
+  display: inline-block;
+  white-space: pre;
+  opacity: 0;
+  animation: hum-char-in 0.42s var(--ease-out-soft) forwards;
+  animation-delay: var(--d, 0s);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  .hum-char {
+    animation: none;
+    opacity: 1;
+    filter: none;
+    transform: none;
+  }
+}
