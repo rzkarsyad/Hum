@@ -4,6 +4,12 @@ All notable changes to Hum are documented here.
 
 ## [Unreleased]
 
+## [1.3.0] — 2026-09-12
+
+### Added
+
+- **Lyric translation** — an optional on-device translation under each line, via Apple's Translation framework. Free, private, and works offline once the language model is downloaded; the source language is detected automatically and the target follows your Mac's language. Turn it on from the menu bar with **Show Translation**. Lines already in your language are left alone rather than printed twice.
+
 ### Fixed
 
 - **Spotify is no longer required** — Hum polled Apple Music and Spotify from a single AppleScript, which forced macOS to resolve *both* apps when the script was compiled. On a Mac without Spotify (or without Apple Music) that popped a "Where is Spotify?" chooser panel and, once dismissed, left Hum unable to read *any* player — including the one that was installed. Each player is now polled by its own script, compiled only once that player is actually running, so Hum works with whichever players you happen to have.
