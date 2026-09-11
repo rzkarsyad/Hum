@@ -1,8 +1,8 @@
-/** The Hum mark — the note from the app icon, on its blue gradient tile. */
+/** The Hum mark — the note from the app icon, on its blue tile. */
 export function Mark({ className = "size-8" }: { className?: string }) {
   return (
     <span
-      className={`relative inline-grid shrink-0 place-items-center overflow-hidden rounded-[28%] bg-gradient-to-br from-brand-2 via-brand to-brand-3 ${className}`}
+      className={`relative inline-grid shrink-0 place-items-center overflow-hidden rounded-[28%] bg-brand ${className}`}
       aria-hidden="true"
     >
       <svg viewBox="0 0 24 24" className="size-[62%] text-white" fill="currentColor">

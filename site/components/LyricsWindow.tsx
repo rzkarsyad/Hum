@@ -44,11 +44,9 @@ function usePrefersReducedMotion() {
 function useDemoClock(running: boolean) {
   const [t, setT] = useState(DEMO_STILL);
   useEffect(() => {
-    if (!running) {
-      setT(DEMO_STILL);
-      return;
-    }
+    if (!running) return;
     let raf = 0;
+    // Pick up from the still frame, so resuming never jumps mid-word.
     const origin = performance.now() - DEMO_STILL * 1000;
     const tick = (now: number) => {
       setT(((now - origin) / 1000) % DEMO_LOOP);
@@ -57,7 +55,7 @@ function useDemoClock(running: boolean) {
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
   }, [running]);
-  return t;
+  return running ? t : DEMO_STILL;
 }
 
 /** A sung line: dim base text with a per-character reveal layered over it. */
@@ -159,7 +157,7 @@ export function LyricsWindow({ className = "" }: { className?: string }) {
 
   const t = useDemoClock(inView && !reduced);
   const active = activeItemIndex(t);
-  const fontSize = 19;
+  const fontSize = 20;
 
   // Centre the active item. Measured rather than assumed, so a wrapped line
   // still lands in the middle.
@@ -178,12 +176,12 @@ export function LyricsWindow({ className = "" }: { className?: string }) {
   return (
     <div
       ref={rootRef}
-      className={`w-full max-w-[440px] overflow-hidden rounded-2xl bg-[#16161b]/85 ring-1 ring-white/10 backdrop-blur-2xl ${className}`}
+      className={`w-full max-w-[500px] overflow-hidden rounded-2xl bg-[#16161b]/85 ring-1 ring-white/10 backdrop-blur-2xl ${className}`}
       style={{ boxShadow: "0 40px 80px -24px rgba(10, 12, 26, 0.55)" }}
     >
       {/* Header — artwork, track, controls. 60px, matching HumLayout.headerHeight. */}
       <div className="flex h-[60px] items-center gap-2.5 px-3 py-2.5">
-        <div className="relative size-10 shrink-0 overflow-hidden rounded-md bg-gradient-to-br from-brand-2 to-brand-3">
+        <div className="relative size-10 shrink-0 overflow-hidden rounded-md bg-brand">
           <svg
             viewBox="0 0 24 24"
             className="absolute inset-0 m-auto size-5 text-white/90"
@@ -215,7 +213,7 @@ export function LyricsWindow({ className = "" }: { className?: string }) {
       {/* Lyrics viewport */}
       <div
         ref={viewportRef}
-        className="relative h-[172px] overflow-hidden"
+        className="relative h-[184px] overflow-hidden"
         style={{
           maskImage:
             "linear-gradient(to bottom, transparent 0%, #000 12%, #000 86%, transparent 100%)",

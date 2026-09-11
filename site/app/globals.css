@@ -93,3 +93,26 @@
     transform: none;
   }
 }
+
+/* ---- Above-the-fold entrance ------------------------------------------- */
+@keyframes hum-rise {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.hum-intro {
+  animation: hum-rise 700ms var(--ease-out-soft) both;
+  animation-delay: var(--d, 0ms);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hum-intro {
+    animation: none;
+  }
+}

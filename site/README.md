@@ -1,36 +1,74 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Hum — landing page
 
-## Getting Started
+The marketing site for [Hum](https://github.com/rzkarsyad/Hum), the floating
+karaoke lyrics app for macOS. Next.js 16 (App Router) + TypeScript + Tailwind v4,
+built as a fully static export — no server, no database, no analytics.
 
-First, run the development server:
+## Develop
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm --prefix site install
+npm --prefix site run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Build
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npm --prefix site run build
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+`output: "export"` writes a static site to `site/out/`, which drops straight into
+GitHub Pages, Vercel, Netlify or any bucket. For GitHub Pages under a repo path,
+add `basePath: "/Hum"` to `next.config.ts` first.
 
-## Learn More
+## How it's put together
 
-To learn more about Next.js, take a look at the following resources:
+| Path | What it does |
+| --- | --- |
+| `lib/site.ts` | Version, download links, Homebrew command. Update here when you ship a release. |
+| `lib/demo.ts` | The demo track driving the hero. Original filler lyrics, never real song lyrics. |
+| `components/LyricsWindow.tsx` | An HTML/CSS rebuild of Hum's floating panel, animating live. |
+| `components/DesktopScene.tsx` | The stylised Mac desktop the window floats over. Flat fill, no gradient. |
+| `components/Intro.tsx` | CSS-only entrance for above-the-fold content. |
+| `components/Reveal.tsx` | Scroll-triggered entrance for everything below it. |
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### The hero window is a recreation, not a screenshot
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+`LyricsWindow` mirrors the real app closely enough that the two should be changed
+together. The values it copies from Swift:
 
-## Deploy on Vercel
+- the `0.3 / 0.45 / 0.28 / 0.15` distance-from-active opacities, and the
+  full-white reveal layered over the active line — `KaraokeView.lineOpacity`
+- per-character easing in from blur and a slight rise, spread across the line's
+  whole duration — `AppearanceEffectRenderer` in `TextEffects.swift`
+- `dotFill(i, progress) = clamp(progress * 3 - i, 0, 1)` for the instrumental
+  dots — `KaraokeItem.swift`
+- the 60px header height and 16px corner radius — `HumLayout`
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+It pauses itself when scrolled out of view and freezes on a still frame under
+`prefers-reduced-motion`.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+The page uses flat colour throughout — no gradients. The one `linear-gradient`
+left in the codebase is the lyrics viewport's edge-fade mask, which is an opacity
+ramp rather than a colour blend and mirrors `KaraokeView`'s own `.mask(...)`.
+Drop it and the lyrics hard-clip at the window edges.
+
+### Typography
+
+The page asks for SF Pro Rounded, which cannot legally be served as a webfont.
+Instead the stack leans on the `ui-rounded` generic family:
+
+```
+ui-rounded, "SF Pro Rounded", Nunito, system-ui, sans-serif
+```
+
+On macOS and iOS — Safari and Chromium alike — `ui-rounded` resolves to the real
+SF Pro Rounded and no webfont is downloaded at all. Everywhere else it falls
+through to Nunito, self-hosted by `next/font`, which only gets fetched when it's
+actually needed.
+
+### Content that goes stale
+
+`lib/site.ts` carries the version number and the "about 2.5 MB" figure, and
+`components/Hero.tsx` has a release badge pointing at the changelog. Those three
+are worth a glance whenever you cut a release.

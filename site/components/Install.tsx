@@ -24,8 +24,8 @@ export function Install() {
               <p className="mt-2.5 text-[15px] leading-[1.6] font-medium text-ink-2">
                 One command, and updates come along with the rest of your casks.
               </p>
-              <div className="mt-6">
-                <CopyField value={site.brew} label="the Homebrew command" />
+              <div className="mt-auto pt-6">
+                <CopyField value={site.brew} label="the Homebrew command" multiline />
               </div>
             </div>
           </Reveal>
@@ -37,15 +37,17 @@ export function Install() {
                 Grab the <code className="font-code text-[14px] text-ink">.dmg</code>, open it,
                 drag Hum to Applications. Built-in updates handle the rest.
               </p>
-              <a
-                href={site.releases}
-                target="_blank"
-                rel="noreferrer"
-                className="mt-6 inline-flex items-center justify-center gap-2 rounded-full bg-ink px-5 py-3.5 text-[15px] font-bold text-white transition hover:bg-ink/85"
-              >
-                Download Hum {site.version}
-                <span aria-hidden="true">&darr;</span>
-              </a>
+              <div className="mt-auto pt-6">
+                <a
+                  href={site.releases}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-ink px-5 py-3.5 text-[15px] font-bold text-white transition hover:bg-ink/85"
+                >
+                  Download Hum {site.version}
+                  <span aria-hidden="true">&darr;</span>
+                </a>
+              </div>
             </div>
           </Reveal>
         </div>

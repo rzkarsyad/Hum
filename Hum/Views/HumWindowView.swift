@@ -93,6 +93,10 @@ struct HumWindowView: View {
         .translationTask(translationConfig) { session in
             await runTranslation(session)
         }
+        // The window is built on demand, so lyrics are often already loaded by
+        // the time this view appears — onChange alone would never fire and the
+        // track would show no translation at all.
+        .onAppear { refreshTranslationConfig() }
         .onChange(of: lyricsState.showTranslation) { _, _ in refreshTranslationConfig() }
         .onChange(of: musicObserver.currentTrack?.title) { _, _ in refreshTranslationConfig() }
         .onChange(of: lyricsState.lines.count) { _, _ in refreshTranslationConfig() }
