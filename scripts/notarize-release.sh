@@ -35,6 +35,7 @@ DMG="$DIST/Hum-$VERSION.dmg"
 STAGE="$DIST/dmg-stage"
 ENTITLEMENTS="$ROOT/Hum/Hum.entitlements"
 FRAMEWORK="$APP/Contents/Resources/MediaRemoteAdapter/MediaRemoteAdapter.framework"
+SPARKLE="$APP/Contents/Frameworks/Sparkle.framework/Versions/B"
 
 echo "==> Regenerating project"
 xcodegen generate
@@ -57,14 +58,41 @@ if [ -d "$FRAMEWORK" ]; then
   codesign --force --options runtime --timestamp --sign "$DEVELOPER_ID" "$FRAMEWORK"
 fi
 
+# Sparkle ships its helpers (Updater.app, Autoupdate and the two XPC services)
+# ad-hoc signed, and Xcode does not descend into them during archive — so
+# notarization rejects them for lacking a Developer ID signature and a secure
+# timestamp. Sign them inside-out, deepest first, then the framework itself.
+if [ -d "$SPARKLE" ]; then
+  echo "==> Signing Sparkle helpers (inside-out)"
+  codesign --force --options runtime --timestamp \
+    --preserve-metadata=entitlements \
+    --sign "$DEVELOPER_ID" "$SPARKLE/XPCServices/Downloader.xpc"
+  for helper in "XPCServices/Installer.xpc" "Updater.app" "Autoupdate"; do
+    codesign --force --options runtime --timestamp \
+      --sign "$DEVELOPER_ID" "$SPARKLE/$helper"
+  done
+  codesign --force --options runtime --timestamp \
+    --sign "$DEVELOPER_ID" "$APP/Contents/Frameworks/Sparkle.framework"
+fi
+
 echo "==> Re-sealing the app bundle"
 codesign --force --options runtime --timestamp \
   --entitlements "$ENTITLEMENTS" \
   --sign "$DEVELOPER_ID" "$APP"
 
 echo "==> Verifying signature + hardened runtime"
-codesign --verify --strict --verbose=2 "$APP"
+codesign --verify --strict --deep --verbose=2 "$APP"
 codesign --display --entitlements - "$APP" >/dev/null
+
+# Notarise and staple the .app *before* wrapping it, so the copy a user drags
+# out of the DMG carries its own ticket. Stapling only the DMG leaves the
+# installed app needing an online Gatekeeper check on first launch.
+echo "==> Notarising the app"
+ditto -c -k --keepParent "$APP" "$DIST/Hum-app.zip"
+xcrun notarytool submit "$DIST/Hum-app.zip" --keychain-profile "$NOTARY_PROFILE" --wait
+xcrun stapler staple "$APP"
+xcrun stapler validate "$APP"
+rm -f "$DIST/Hum-app.zip"
 
 echo "==> Building DMG"
 rm -rf "$STAGE" "$DMG"
@@ -73,7 +101,10 @@ cp -R "$APP" "$STAGE/Hum.app"
 ln -s /Applications "$STAGE/Applications"
 hdiutil create -volname "Hum" -srcfolder "$STAGE" -ov -format UDZO "$DMG"
 
-echo "==> Submitting to notarytool (waits for the result — usually a few minutes)"
+echo "==> Signing the DMG"
+codesign --force --timestamp --sign "$DEVELOPER_ID" "$DMG"
+
+echo "==> Notarising the DMG (waits for the result — usually a few minutes)"
 xcrun notarytool submit "$DMG" --keychain-profile "$NOTARY_PROFILE" --wait
 
 echo "==> Stapling the notarization ticket"
