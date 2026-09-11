@@ -103,4 +103,89 @@ final class MusicObserverTests: XCTestCase {
     func test_merge_noBrowserFallsBackToAppleScript() {
         XCTAssertEqual(mergeOutcome(appleScript: .paused, browser: nil, browserPosition: 0), .paused)
     }
+
+    // MARK: - Optional player apps
+    //
+    // Regression guard: Hum must never force AppleScript to resolve a player's
+    // scripting terminology unless that player is actually present. A script
+    // that hard-codes `tell application "Spotify"` makes AppleScript resolve
+    // Spotify at COMPILE time, which on a Mac without Spotify pops the
+    // "Where is Spotify?" chooser panel or fails to compile outright.
+
+    func test_runningPlayersScript_neverTellsAThirdPartyApp() {
+        let script = runningPlayersScriptSource(ScriptablePlayer.allCases)
+        // System Events is present on every Mac, so telling it is always safe.
+        XCTAssertTrue(script.contains(#"tell application "System Events""#))
+        // Probing by process name needs no terminology from the app itself.
+        XCTAssertTrue(script.contains(#"exists process "Music""#))
+        XCTAssertTrue(script.contains(#"exists process "Spotify""#))
+        // …but the app itself must never be told, or the compile resolves it.
+        XCTAssertFalse(script.contains(#"tell application "Spotify""#))
+        XCTAssertFalse(script.contains(#"tell application "Music""#))
+    }
+
+    func test_pollScriptSource_isScopedToASinglePlayer() {
+        let music = pollScriptSource(for: .appleMusic)
+        XCTAssertTrue(music.contains(#"tell application "Music""#))
+        XCTAssertFalse(music.contains("Spotify"))
+
+        let spotify = pollScriptSource(for: .spotify)
+        XCTAssertTrue(spotify.contains(#"tell application "Spotify""#))
+        XCTAssertFalse(spotify.contains(#"tell application "Music""#))
+    }
+
+    func test_pollScriptSource_tagsItsOwnSource() {
+        XCTAssertTrue(pollScriptSource(for: .appleMusic).contains("playing\tmusic\t"))
+        XCTAssertTrue(pollScriptSource(for: .spotify).contains("playing\tspotify\t"))
+    }
+
+    func test_pollScriptSource_spotifyNormalizesMillisecondDuration() {
+        XCTAssertTrue(pollScriptSource(for: .spotify).contains("/ 1000"))
+        XCTAssertFalse(pollScriptSource(for: .appleMusic).contains("/ 1000"))
+    }
+
+    func test_pollScriptSource_reportsPausedAndStopped() {
+        for player in ScriptablePlayer.allCases {
+            let script = pollScriptSource(for: player)
+            XCTAssertTrue(script.contains(#""paused""#), "\(player) must report paused")
+            XCTAssertTrue(script.contains(#""stopped""#), "\(player) must report stopped")
+        }
+    }
+
+    // MARK: - parseRunningPlayers
+
+    func test_parseRunningPlayers_returnsPriorityOrder() {
+        XCTAssertEqual(parseRunningPlayers("spotify\tmusic\t"), [.appleMusic, .spotify])
+    }
+
+    func test_parseRunningPlayers_handlesSingleAndEmpty() {
+        XCTAssertEqual(parseRunningPlayers("spotify\t"), [.spotify])
+        XCTAssertEqual(parseRunningPlayers(""), [])
+        XCTAssertEqual(parseRunningPlayers("\t\t"), [])
+    }
+
+    func test_parseRunningPlayers_ignoresUnknownTags() {
+        XCTAssertEqual(parseRunningPlayers("deezer\tmusic\t"), [.appleMusic])
+    }
+
+    // MARK: - mergePlayerOutcomes
+
+    private func playing(_ source: PlayerSource) -> PollOutcome {
+        .playing(PollResult(source: source,
+                            track: Track(title: "T", artist: "A", album: "Al"),
+                            position: 1))
+    }
+
+    func test_mergePlayerOutcomes_firstPlayingWins() {
+        XCTAssertEqual(mergePlayerOutcomes([.paused, playing(.spotify)]), playing(.spotify))
+    }
+
+    func test_mergePlayerOutcomes_pausedBeatsStopped() {
+        XCTAssertEqual(mergePlayerOutcomes([.stopped, .paused]), .paused)
+    }
+
+    func test_mergePlayerOutcomes_emptyIsStopped() {
+        XCTAssertEqual(mergePlayerOutcomes([]), .stopped)
+        XCTAssertEqual(mergePlayerOutcomes([.stopped]), .stopped)
+    }
 }
