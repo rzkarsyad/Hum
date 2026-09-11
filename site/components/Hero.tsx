@@ -1,21 +1,14 @@
 import { CopyField } from "@/components/CopyField";
 import { DesktopScene } from "@/components/DesktopScene";
 import { LyricsWindow } from "@/components/LyricsWindow";
-import { Reveal } from "@/components/Reveal";
+import { Intro } from "@/components/Intro";
 import { site } from "@/lib/site";
 
 export function Hero() {
   return (
     <section id="top" className="relative overflow-hidden">
-      {/* Soft bloom, in the app-icon blues */}
-      <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[760px]" aria-hidden="true">
-        <div className="absolute left-1/2 top-[-260px] size-[900px] -translate-x-1/2 rounded-full bg-[radial-gradient(circle,rgba(90,200,250,0.22)_0%,transparent_66%)]" />
-        <div className="absolute left-[12%] top-[60px] size-[560px] rounded-full bg-[radial-gradient(circle,rgba(10,132,255,0.14)_0%,transparent_68%)]" />
-        <div className="absolute right-[8%] top-[20px] size-[520px] rounded-full bg-[radial-gradient(circle,rgba(255,140,200,0.14)_0%,transparent_68%)]" />
-      </div>
-
       <div className="mx-auto max-w-6xl px-6 pt-14 pb-16 text-center sm:pt-20">
-        <Reveal>
+        <Intro>
           <a
             href={site.changelog}
             target="_blank"
@@ -28,26 +21,24 @@ export function Hero() {
             Spotify and browser support are here
             <span aria-hidden="true" className="text-ink-3">&rarr;</span>
           </a>
-        </Reveal>
+        </Intro>
 
-        <Reveal delay={80}>
+        <Intro delay={80}>
           <h1 className="headline mx-auto mt-7 max-w-[14ch] text-[clamp(2.75rem,7.4vw,5.25rem)]">
             Every word,
             <br />
-            <span className="bg-gradient-to-r from-brand-3 via-brand to-brand-2 bg-clip-text text-transparent">
-              right on time.
-            </span>
+            <span className="text-brand">right on time.</span>
           </h1>
-        </Reveal>
+        </Intro>
 
-        <Reveal delay={150}>
+        <Intro delay={150}>
           <p className="mx-auto mt-6 max-w-[46ch] text-[17px] leading-[1.55] font-medium text-ink-2 sm:text-[19px]">
             Hum floats synced lyrics above everything you&rsquo;re doing. Apple Music,
             Spotify, or whatever&rsquo;s playing in a browser tab &mdash; it just knows.
           </p>
-        </Reveal>
+        </Intro>
 
-        <Reveal delay={210}>
+        <Intro delay={210}>
           <div className="mx-auto mt-9 flex max-w-xl flex-col items-center gap-3 sm:flex-row sm:justify-center">
             <a
               href={site.releases}
@@ -62,23 +53,23 @@ export function Hero() {
             </a>
             <CopyField value={site.brew} label="the Homebrew command" className="sm:max-w-[24rem]" />
           </div>
-        </Reveal>
+        </Intro>
 
-        <Reveal delay={260}>
+        <Intro delay={260}>
           <p className="mt-5 text-[13px] font-medium text-ink-3">
             Free and open source &middot; {site.minMacOS} or later &middot; about {site.size}
           </p>
-        </Reveal>
+        </Intro>
       </div>
 
-      <Reveal delay={120} className="px-6 pb-20 sm:pb-28">
+      <Intro delay={120} className="px-6 pb-20 sm:pb-28">
         <div className="hidden md:block">
           <DesktopScene />
         </div>
         <div className="flex justify-center md:hidden">
           <LyricsWindow />
         </div>
-      </Reveal>
+      </Intro>
     </section>
   );
 }
