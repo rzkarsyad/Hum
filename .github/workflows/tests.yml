@@ -1,0 +1,65 @@
+name: Tests
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+# A newer push supersedes an in-flight run on the same branch.
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: xcodebuild test
+    runs-on: macos-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Hum guards Liquid Glass controls behind `#available(macOS 26.0, *)`,
+      # so the toolchain must ship at least the macOS 26 SDK. Pick the newest
+      # Xcode the runner has and fail loudly if it is too old, rather than
+      # letting the build fail later with a confusing availability error.
+      - name: Select newest Xcode
+        run: |
+          XCODE=$(ls -d /Applications/Xcode*.app | sort -V | tail -1)
+          echo "Using $XCODE"
+          sudo xcode-select -s "$XCODE"
+          xcodebuild -version
+          SDK=$(xcrun --show-sdk-version)
+          echo "macOS SDK: $SDK"
+          if [ "${SDK%%.*}" -lt 26 ]; then
+            echo "::error::macOS SDK $SDK is too old — Hum needs 26 or newer"
+            exit 1
+          fi
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      # project.pbxproj is generated, so the checked-in copy is never trusted.
+      - name: Generate project
+        run: xcodegen generate
+
+      - name: Test
+        run: |
+          xcodebuild test \
+            -project Hum.xcodeproj \
+            -scheme Hum \
+            -destination 'platform=macOS' \
+            -resultBundlePath TestResults.xcresult \
+            | tee xcodebuild.log
+        shell: bash
+
+      - name: Upload results
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: |
+            TestResults.xcresult
+            xcodebuild.log
+          retention-days: 7
