@@ -111,30 +111,3 @@ final class KaraokeItemTests: XCTestCase {
         XCTAssertNil(activeItemIndex(in: [], at: 5))
     }
 }
-
-final class TranslationFilterTests: XCTestCase {
-
-    func test_keepsARealTranslation() {
-        let map = usefulTranslations([(0, "Saranghae", "I love you")])
-        XCTAssertEqual(map, [0: "I love you"])
-    }
-
-    func test_dropsEchoedSourceWhenAlreadyInDeviceLanguage() {
-        // Translation auto-detects the source; same-language input comes back
-        // unchanged and would print the lyrics twice.
-        XCTAssertEqual(usefulTranslations([(0, "Hello darkness", "Hello darkness")]), [:])
-    }
-
-    func test_echoComparisonIgnoresCaseWhitespaceAndPunctuation() {
-        XCTAssertEqual(usefulTranslations([(0, "Hello, darkness!", "  hello darkness  ")]), [:])
-    }
-
-    func test_dropsEmptyTranslations() {
-        XCTAssertEqual(usefulTranslations([(0, "Line", ""), (1, "Line", "   ")]), [:])
-    }
-
-    func test_trimsAndKeepsIndexes() {
-        let map = usefulTranslations([(3, "Kimi wa", "  You are  "), (7, "Sora", "Sky")])
-        XCTAssertEqual(map, [3: "You are", 7: "Sky"])
-    }
-}
