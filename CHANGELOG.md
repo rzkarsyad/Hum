@@ -4,6 +4,10 @@ All notable changes to Hum are documented here.
 
 ## [Unreleased]
 
+### Fixed
+
+- **Spotify is no longer required** — Hum polled Apple Music and Spotify from a single AppleScript, which forced macOS to resolve *both* apps when the script was compiled. On a Mac without Spotify (or without Apple Music) that popped a "Where is Spotify?" chooser panel and, once dismissed, left Hum unable to read *any* player — including the one that was installed. Each player is now polled by its own script, compiled only once that player is actually running, so Hum works with whichever players you happen to have.
+
 ### Changed
 
 - **Better lyric matching** — when an exact lookup misses, Hum now falls back to LRCLIB search and safely matches by title + artist (with a duration tiebreak), finding synced lyrics for many more tracks — especially those played in a browser, where album/duration metadata is often incomplete.
