@@ -1,6 +1,53 @@
 import AppKit
 import SwiftUI
 
+/// The smallest patch of the window that must stay on screen for the user to be
+/// able to grab and drag it back.
+let minGrabbableWindowSize = CGSize(width: 120, height: 40)
+
+/// Returns a frame the user can actually reach, given the screens attached now.
+///
+/// A saved frame can point at a display that has since been unplugged. Hum's
+/// panel is borderless, has no Dock icon and no window menu, so a window
+/// restored out there cannot be dragged back at all — the app looks like it
+/// simply stopped working until its preferences are deleted by hand.
+func reachableWindowFrame(saved: CGRect, screens: [CGRect], fallback: CGRect) -> CGRect {
+    guard saved.width > 0, saved.height > 0,
+          saved.origin.x.isFinite, saved.origin.y.isFinite,
+          saved.width.isFinite, saved.height.isFinite
+    else { return fallback }
+
+    // Nothing to validate against — moving the window would only be a guess.
+    guard !screens.isEmpty else { return saved }
+
+    // Enough of it showing on a screen it actually fits? Leave it exactly where
+    // the user put it, including deliberately hanging off an edge.
+    for screen in screens where saved.width <= screen.width && saved.height <= screen.height {
+        let overlap = saved.intersection(screen)
+        guard !overlap.isNull else { continue }
+        if overlap.width >= min(minGrabbableWindowSize.width, saved.width),
+           overlap.height >= min(minGrabbableWindowSize.height, saved.height) {
+            return saved
+        }
+    }
+
+    // Otherwise bring it onto the screen whose centre is nearest, keeping its
+    // size wherever that still fits.
+    let target = screens.min {
+        hypot($0.midX - saved.midX, $0.midY - saved.midY) <
+        hypot($1.midX - saved.midX, $1.midY - saved.midY)
+    } ?? screens[0]
+
+    let size = CGSize(width: min(saved.width, target.width),
+                      height: min(saved.height, target.height))
+    return CGRect(
+        x: min(max(saved.minX, target.minX), target.maxX - size.width),
+        y: min(max(saved.minY, target.minY), target.maxY - size.height),
+        width: size.width,
+        height: size.height
+    )
+}
+
 final class WindowManager: NSObject, NSWindowDelegate {
     private let panel: FloatingPanel
     private var savedHeight: CGFloat = 276
@@ -129,22 +176,23 @@ final class WindowManager: NSObject, NSWindowDelegate {
     }
 
     private func restoreOrSetDefaultPosition() {
-        if let saved = UserDefaults.standard.string(forKey: "windowFrame") {
-            let savedFrame = NSRectFromString(saved)
-            if savedFrame != .zero {
-                panel.setFrame(savedFrame, display: false)
-                savedHeight = savedFrame.height
-                return
-            }
-        }
         let size = CGSize(width: 320, height: 276)
-        savedHeight = size.height
-        guard let screen = NSScreen.main else { return }
-        let origin = CGPoint(
-            x: screen.visibleFrame.midX - size.width / 2,
-            y: screen.visibleFrame.minY + 60
-        )
-        panel.setFrame(CGRect(origin: origin, size: size), display: false)
+        let screens = NSScreen.screens.map(\.visibleFrame)
+        let fallback: CGRect = {
+            guard let screen = NSScreen.main else { return CGRect(origin: .zero, size: size) }
+            return CGRect(
+                x: screen.visibleFrame.midX - size.width / 2,
+                y: screen.visibleFrame.minY + 60,
+                width: size.width,
+                height: size.height
+            )
+        }()
+
+        let saved = UserDefaults.standard.string(forKey: "windowFrame").map(NSRectFromString) ?? .zero
+        // Never trust a saved frame blindly: the display it was saved on may be gone.
+        let frame = reachableWindowFrame(saved: saved, screens: screens, fallback: fallback)
+        panel.setFrame(frame, display: false)
+        savedHeight = frame.height
     }
 }
 
