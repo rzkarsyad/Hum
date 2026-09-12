@@ -45,6 +45,49 @@ func bestSyncedMatch(results: [LRCLIBSearchResult], title: String, artist: Strin
     }?.syncedLyrics
 }
 
+/// Builds the `/api/get` URL for an exact lookup.
+///
+/// `duration` is sent only when positive: Spotify and the browser source can
+/// report 0 before metadata settles, and `duration=0` turns a lookup that would
+/// have hit into a miss.
+func lrclibGetURL(title: String, artist: String, album: String?, duration: TimeInterval?) -> URL? {
+    var components = URLComponents(string: "https://lrclib.net/api/get")!
+    var queryItems = [
+        URLQueryItem(name: "track_name", value: title),
+        URLQueryItem(name: "artist_name", value: artist)
+    ]
+    if let album {
+        queryItems.append(URLQueryItem(name: "album_name", value: album))
+    }
+    if let duration, duration > 0 {
+        queryItems.append(URLQueryItem(name: "duration", value: String(Int(duration.rounded()))))
+    }
+    components.queryItems = queryItems
+    return components.url
+}
+
+/// Builds the fuzzy `/api/search` URL. Album and duration are deliberately left
+/// out — they are often wrong or missing for browser playback, which is exactly
+/// when this fallback is needed.
+func lrclibSearchURL(title: String, artist: String) -> URL? {
+    var components = URLComponents(string: "https://lrclib.net/api/search")!
+    components.queryItems = [
+        URLQueryItem(name: "track_name", value: title),
+        URLQueryItem(name: "artist_name", value: artist)
+    ]
+    return components.url
+}
+
+/// Decodes the synced lyrics out of an `/api/get` response.
+func parseLRCLIBLyrics(_ data: Data) throws -> String? {
+    try JSONDecoder().decode(LRCLIBResponse.self, from: data).syncedLyrics
+}
+
+/// Decodes an `/api/search` response.
+func parseLRCLIBSearchResults(_ data: Data) throws -> [LRCLIBSearchResult] {
+    try JSONDecoder().decode([LRCLIBSearchResult].self, from: data)
+}
+
 struct LRCLIBSource: LyricsSource {
     func fetchSyncedLyrics(for track: Track) async -> String? {
         try? await fetchSyncedLyricsWithError(for: track).get()
@@ -74,19 +117,8 @@ struct LRCLIBSource: LyricsSource {
     }
 
     private func request(title: String, artist: String, album: String?, duration: TimeInterval?) async -> Result<String?, Error> {
-        var components = URLComponents(string: "https://lrclib.net/api/get")!
-        var queryItems = [
-            URLQueryItem(name: "track_name", value: title),
-            URLQueryItem(name: "artist_name", value: artist)
-        ]
-        if let album = album {
-            queryItems.append(URLQueryItem(name: "album_name", value: album))
-        }
-        if let duration = duration, duration > 0 {
-            queryItems.append(URLQueryItem(name: "duration", value: String(Int(duration.rounded()))))
-        }
-        components.queryItems = queryItems
-        guard let url = components.url else { return .success(nil) }
+        guard let url = lrclibGetURL(title: title, artist: artist, album: album, duration: duration)
+        else { return .success(nil) }
 
         var req = URLRequest(url: url, timeoutInterval: 10)
         req.setValue("Hum macOS app", forHTTPHeaderField: "User-Agent")
@@ -94,20 +126,14 @@ struct LRCLIBSource: LyricsSource {
         do {
             let (data, response) = try await URLSession.shared.data(for: req)
             guard let http = response as? HTTPURLResponse, http.statusCode == 200 else { return .success(nil) }
-            let json = try JSONDecoder().decode(LRCLIBResponse.self, from: data)
-            return .success(json.syncedLyrics)
+            return .success(try parseLRCLIBLyrics(data))
         } catch {
             return .failure(error)
         }
     }
 
     private func searchRequest(title: String, artist: String) async -> Result<[LRCLIBSearchResult], Error> {
-        var components = URLComponents(string: "https://lrclib.net/api/search")!
-        components.queryItems = [
-            URLQueryItem(name: "track_name", value: title),
-            URLQueryItem(name: "artist_name", value: artist),
-        ]
-        guard let url = components.url else { return .success([]) }
+        guard let url = lrclibSearchURL(title: title, artist: artist) else { return .success([]) }
 
         var req = URLRequest(url: url, timeoutInterval: 10)
         req.setValue("Hum macOS app", forHTTPHeaderField: "User-Agent")
@@ -115,8 +141,7 @@ struct LRCLIBSource: LyricsSource {
         do {
             let (data, response) = try await URLSession.shared.data(for: req)
             guard let http = response as? HTTPURLResponse, http.statusCode == 200 else { return .success([]) }
-            let results = try JSONDecoder().decode([LRCLIBSearchResult].self, from: data)
-            return .success(results)
+            return .success(try parseLRCLIBSearchResults(data))
         } catch {
             return .failure(error)
         }
