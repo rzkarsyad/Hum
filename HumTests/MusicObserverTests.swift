@@ -188,4 +188,40 @@ final class MusicObserverTests: XCTestCase {
         XCTAssertEqual(mergePlayerOutcomes([]), .stopped)
         XCTAssertEqual(mergePlayerOutcomes([.stopped]), .stopped)
     }
+
+    // MARK: - Player script compile retries
+
+    // A player script is compiled the first time that player's process is seen
+    // running. If that compile fails — the app being replaced mid-update, say —
+    // caching the failure forever kills that player until Hum is relaunched.
+
+    func test_aFailedCompileIsNotRetriedImmediately() {
+        let failedAt = Date()
+        XCTAssertFalse(shouldRetryPlayerScript(lastFailure: failedAt,
+                                               now: failedAt.addingTimeInterval(0.5)))
+        XCTAssertFalse(shouldRetryPlayerScript(lastFailure: failedAt,
+                                               now: failedAt.addingTimeInterval(playerScriptRetryCooldown - 1)))
+    }
+
+    func test_aFailedCompileIsRetriedAfterTheCooldown() {
+        let failedAt = Date()
+        XCTAssertTrue(shouldRetryPlayerScript(lastFailure: failedAt,
+                                              now: failedAt.addingTimeInterval(playerScriptRetryCooldown)))
+        XCTAssertTrue(shouldRetryPlayerScript(lastFailure: failedAt,
+                                              now: failedAt.addingTimeInterval(playerScriptRetryCooldown * 10)))
+    }
+
+    func test_aClockThatJumpsBackwardsDoesNotWedgeTheRetry() {
+        // NTP corrections and DST can move `now` behind the recorded failure.
+        let failedAt = Date()
+        XCTAssertTrue(shouldRetryPlayerScript(lastFailure: failedAt,
+                                              now: failedAt.addingTimeInterval(-3600)))
+    }
+
+    func test_theCooldownIsShortEnoughToBeUseful() {
+        // Polling is 2 Hz; the cooldown exists to avoid hammering a broken
+        // compile, not to disable the player for the rest of the session.
+        XCTAssertGreaterThanOrEqual(playerScriptRetryCooldown, 5)
+        XCTAssertLessThanOrEqual(playerScriptRetryCooldown, 300)
+    }
 }
