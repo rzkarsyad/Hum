@@ -137,7 +137,7 @@ final class BrowserMediaSource {
     private let maxFailures = 5
 
     func start() {
-        isStopped = false
+        lock.lock(); isStopped = false; lock.unlock()
         guard adapterAvailable() else {
             NSLog("[Hum] MediaRemote adapter unavailable — browser detection disabled.")
             return
@@ -146,7 +146,7 @@ final class BrowserMediaSource {
     }
 
     func stop() {
-        isStopped = true
+        lock.lock(); isStopped = true; lock.unlock()
         process?.terminate()
         process = nil
     }
@@ -199,15 +199,24 @@ final class BrowserMediaSource {
 
         let startedAt = Date()
         proc.terminationHandler = { [weak self] _ in
-            guard let self, !self.isStopped else { return }
-            guard let retry = adapterRetry(failures: self.failureCount,
+            guard let self else { return }
+            // isStopped and failureCount are read here on the process's own
+            // termination queue while start()/stop() touch them elsewhere, so
+            // take the lock this class already has rather than racing.
+            self.lock.lock()
+            let stopped = self.isStopped
+            let failures = self.failureCount
+            self.lock.unlock()
+            guard !stopped else { return }
+
+            guard let retry = adapterRetry(failures: failures,
                                            ranFor: Date().timeIntervalSince(startedAt),
                                            maxFailures: self.maxFailures)
             else {
                 NSLog("[Hum] MediaRemote adapter failed repeatedly — browser detection disabled.")
                 return
             }
-            self.failureCount = retry.failures
+            self.lock.lock(); self.failureCount = retry.failures; self.lock.unlock()
             DispatchQueue.global().asyncAfter(deadline: .now() + retry.delay) { [weak self] in
                 guard let self, !self.isStopped else { return }
                 self.launchStream()
