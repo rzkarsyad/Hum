@@ -2,6 +2,8 @@
 
 Floating karaoke lyrics for Apple Music, Spotify & browsers — always on top, always in sync.
 
+**[hum.arsat.work](https://hum.arsat.work)**
+
 ![Hum screenshot](docs/screenshot.png)
 
 ---
