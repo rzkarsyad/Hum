@@ -138,6 +138,22 @@ func mergeOutcome(appleScript: PollOutcome, browser: BrowserSnapshot?, browserPo
     return appleScript
 }
 
+/// How long to leave a player alone after its script failed to compile, before
+/// trying again.
+let playerScriptRetryCooldown: TimeInterval = 30
+
+/// Whether a player whose script failed to compile should be retried yet.
+///
+/// A compile only fails when AppleScript cannot resolve the app — normally
+/// because it is being replaced mid-update. Caching that failure for the rest of
+/// the session would disable the player until Hum is relaunched, so it expires;
+/// a cooldown keeps the 2 Hz poll from hammering a genuinely broken app.
+/// A backwards clock jump (NTP, DST) retries rather than wedging.
+func shouldRetryPlayerScript(lastFailure: Date, now: Date) -> Bool {
+    let elapsed = now.timeIntervalSince(lastFailure)
+    return elapsed < 0 || elapsed >= playerScriptRetryCooldown
+}
+
 @MainActor
 final class MusicObserver: ObservableObject {
     @Published private(set) var currentTrack: Track? = nil
@@ -267,18 +283,34 @@ final class MusicObserver: ObservableObject {
     // the process is running the app is installed, so AppleScript can always
     // resolve its terminology. Compiling a script for a *missing* app would pop
     // the "Where is …?" chooser panel or fail outright, so we never do it.
-    // A stored nil records a failed compile so it is not retried every poll.
+    // A failure is remembered with its time so the 2 Hz poll does not hammer a
+    // broken compile, but it expires — see shouldRetryPlayerScript.
     // Only ever touched on serial pollQueue — nonisolated(unsafe) is safe here.
-    private nonisolated(unsafe) static var compiledPlayerScripts: [ScriptablePlayer: NSAppleScript?] = [:]
+    private enum PlayerScript {
+        case compiled(NSAppleScript)
+        case failed(at: Date)
+    }
+    private nonisolated(unsafe) static var playerScripts: [ScriptablePlayer: PlayerScript] = [:]
 
     private nonisolated static func playerScript(for player: ScriptablePlayer) -> NSAppleScript? {
-        if let cached = compiledPlayerScripts[player] { return cached }
+        switch playerScripts[player] {
+        case .compiled(let script):
+            return script
+        case .failed(let at) where !shouldRetryPlayerScript(lastFailure: at, now: Date()):
+            return nil
+        case .failed, .none:
+            break
+        }
+
         var err: NSDictionary?
         let script = NSAppleScript(source: pollScriptSource(for: player))
         script?.compileAndReturnError(&err)
-        let compiled = err == nil ? script : nil
-        compiledPlayerScripts[player] = compiled
-        return compiled
+        guard err == nil, let script else {
+            playerScripts[player] = .failed(at: Date())
+            return nil
+        }
+        playerScripts[player] = .compiled(script)
+        return script
     }
 
     private nonisolated static func run(_ script: NSAppleScript) -> String? {
