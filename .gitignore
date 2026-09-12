@@ -19,3 +19,5 @@ check_mediaplayer2
 
 # Marketing site (separate work in progress)
 site/
+.vercel
+.env*
