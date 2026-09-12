@@ -4,6 +4,14 @@ All notable changes to Hum are documented here.
 
 ## [Unreleased]
 
+## [1.3.3] · 2026-09-12
+
+### Fixed
+
+- **Hum no longer keeps drawing the lyrics window while it is hidden.** Hiding the lyrics only took the window off screen; everything behind it carried on redrawing at full speed, so Hum still spent about half a CPU core and 100 MB of memory on something nobody could see. Hidden now costs about 2% of a core and 46 MB.
+- **Much lower CPU and memory when idle.** With nothing playing, Hum now uses roughly half the CPU and a third less memory than before, which matters most for a menu bar app that stays open all day.
+- **Lower CPU while lyrics are on screen.** The playback position was republished sixty times a second, forcing the whole window to lay out and redraw every frame even though only one line changes at a time. The window now redraws when something actually changes, cutting CPU use by roughly a fifth while lyrics are visible.
+
 ## [1.3.2] — 2026-09-12
 
 ### Fixed
