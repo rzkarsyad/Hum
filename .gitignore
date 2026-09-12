@@ -17,7 +17,7 @@ check_mediaplayer2
 .superpowers/
 .codex/
 
-# Marketing site (separate work in progress)
-site/
+# The landing page lives in site/ and is deployed by Vercel from this repo;
+# its own .gitignore covers node_modules, .next and out.
 .vercel
 .env*
