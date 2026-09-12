@@ -6,6 +6,26 @@
     <description>Hum update feed</description>
     <language>en</language>
     <item>
+      <title>Version 1.3.3</title>
+      <pubDate>Sat, 12 Sep 2026 09:12:33 +0000</pubDate>
+      <sparkle:version>7</sparkle:version>
+      <sparkle:shortVersionString>1.3.3</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>15.0</sparkle:minimumSystemVersion>
+      <description><![CDATA[
+          <h3>Fixed</h3>
+          <ul>
+          <li><strong>Hum no longer keeps drawing the lyrics window while it is hidden.</strong> Hiding the lyrics only took the window off screen; everything behind it carried on redrawing at full speed, so Hum still spent about half a CPU core and 100 MB of memory on something nobody could see. Hidden now costs about 2% of a core and 46 MB.</li>
+          <li><strong>Much lower CPU and memory when idle.</strong> With nothing playing, Hum now uses roughly half the CPU and a third less memory than before, which matters most for a menu bar app that stays open all day.</li>
+          <li><strong>Lower CPU while lyrics are on screen.</strong> The playback position was republished sixty times a second, forcing the whole window to lay out and redraw every frame even though only one line changes at a time. The window now redraws when something actually changes, cutting CPU use by roughly a fifth while lyrics are visible.</li>
+          </ul>
+      ]]></description>
+      <enclosure
+        url="https://github.com/rzkarsyad/Hum/releases/download/v1.3.3/Hum-1.3.3.dmg"
+        sparkle:edSignature="hF3wzAVkm5AI13sBksyuSDVgqFRFdXm1UbLhu+AAtfplKavDzQYAXU1theCcM5WNIP+wExfuy1LkCInOPyfWDA=="
+        length="4046016"
+        type="application/octet-stream"/>
+    </item>
+    <item>
       <title>Version 1.3.2</title>
       <pubDate>Sat, 12 Sep 2026 03:58:39 +0000</pubDate>
       <sparkle:version>6</sparkle:version>
