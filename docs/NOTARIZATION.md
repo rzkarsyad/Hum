@@ -7,6 +7,44 @@ the rest.
 
 The normal ad-hoc build is unchanged; the script overrides signing only when run.
 
+## Cutting a release
+
+Once the one-time prerequisites below are in place, a release is one command:
+
+```bash
+VERSION="1.4.0" scripts/release.sh
+```
+
+`scripts/release.sh` wraps `notarize-release.sh` and then performs every step
+that used to be manual and order-sensitive:
+
+1. **Preflight** — on `main`, clean tree, level with `origin/main`, `VERSION`
+   matches `Info.plist`, a `## [VERSION]` section exists in the changelog, the
+   tag is free, `sign_update` is present, `gh` is authenticated.
+2. **Build** — Developer ID sign, notarize and staple (both the `.app` and the
+   DMG), via `notarize-release.sh`.
+3. **Verify** — the same checks a user's Mac performs: Gatekeeper on the DMG,
+   on the app inside it, and a stapled ticket on both.
+4. **Publish** — tag, push, create the GitHub release, then re-download the
+   published asset and confirm its sha256 matches what was signed.
+5. **Appcast** — generate the entry (changelog markdown is converted to the
+   HTML Sparkle renders), validate the XML, commit and push. This runs *after*
+   the asset is live, so no update check can hit a 404.
+6. **Cask** — bump version and sha256 in `rzkarsyad/homebrew-hum`.
+
+Rehearse without publishing anything:
+
+```bash
+VERSION="1.4.0" DRY_RUN=1 scripts/release.sh
+```
+
+Signing material never leaves this Mac — the Developer ID certificate, the
+notarytool credentials and the Sparkle EdDSA private key are all read from the
+local keychain. That is why this is a script rather than a CI workflow.
+`.github/workflows/appcast.yml` covers the part that needs no secrets: it
+checks every enclosure URL resolves and that each declared `length` matches the
+real asset.
+
 ## One-time prerequisites
 
 You already have a paid Apple Developer account (Team `HGD2NY6696`), but you need
