@@ -28,6 +28,7 @@
 		8A65561CA17368DB3C5CCCB0 /* BrowserMediaSourceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FA6F1B07CCCB75111039F64 /* BrowserMediaSourceTests.swift */; };
 		9241AD3B726EC4DC3D0067A3 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01E4916ECFF7F16958A2DD42 /* OnboardingView.swift */; };
 		9C13E15D7D22534FBACFDAA9 /* LyricsDiskCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09175628B0280B618A8CDFBD /* LyricsDiskCache.swift */; };
+		A31BBB49E9461EAA2A751C02 /* WindowFrameTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C5C835EF75400339CF29B35 /* WindowFrameTests.swift */; };
 		A465D5F0BF56748782D9AC35 /* LRCLIBSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6F0318A2F89BE471687559C /* LRCLIBSource.swift */; };
 		A73AAE69F1DB935CF80A8450 /* LyricsState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84DCE40615E3473600EDA417 /* LyricsState.swift */; };
 		AE1F4549E08AEF9E64924879 /* MusicObserver.swift in Sources */ = {isa = PBXBuildFile; fileRef = A71A4A168755ADB39CDDE598 /* MusicObserver.swift */; };
@@ -65,6 +66,7 @@
 		34C6BB3B2A86D18BCD2C611A /* LyricLine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LyricLine.swift; sourceTree = "<group>"; };
 		38362647FCBE534810B8B1C0 /* LyricsEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LyricsEngine.swift; sourceTree = "<group>"; };
 		48DFFF1FE0888B369CE5B7EB /* LyricsSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LyricsSource.swift; sourceTree = "<group>"; };
+		4C5C835EF75400339CF29B35 /* WindowFrameTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowFrameTests.swift; sourceTree = "<group>"; };
 		55C8CE5E8D0F48FA979FC375 /* KaraokeItemTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KaraokeItemTests.swift; sourceTree = "<group>"; };
 		585010E332D2C8FFD45F5DF1 /* HumTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = HumTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		5C49C27855409B5B8BC9469A /* ServiceManagement.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ServiceManagement.framework; path = System/Library/Frameworks/ServiceManagement.framework; sourceTree = SDKROOT; };
@@ -129,6 +131,7 @@
 				B7A52699554335D554E49F29 /* LyricsDiskCacheTests.swift */,
 				6D44CE1050F87B8208EFC257 /* LyricsEngineTests.swift */,
 				A09C814A8A9B00EA368CE05B /* MusicObserverTests.swift */,
+				4C5C835EF75400339CF29B35 /* WindowFrameTests.swift */,
 			);
 			path = HumTests;
 			sourceTree = "<group>";
@@ -346,6 +349,7 @@
 				415FF9E43F63DB6EF45B7005 /* LyricsDiskCacheTests.swift in Sources */,
 				D3893A676538A199EC320E5C /* LyricsEngineTests.swift in Sources */,
 				B5A37513984E0D7EB17F9638 /* MusicObserverTests.swift in Sources */,
+				A31BBB49E9461EAA2A751C02 /* WindowFrameTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
