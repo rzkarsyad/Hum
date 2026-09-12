@@ -97,27 +97,30 @@ signs the bundled MediaRemote adapter framework (a Resources folder reference
 Xcode doesn't auto-sign), builds the DMG, submits to notarytool, waits, and
 staples the ticket.
 
-After it succeeds, finish the release as usual:
-1. Sparkle-sign the DMG: `…/Sparkle/bin/sign_update dist/Hum-<version>.dmg`
-2. Add the `appcast.xml` entry with that signature.
-3. `gh release create v<version> dist/Hum-<version>.dmg …`
-
-## Then drop `--no-quarantine`
-
-Once notarized, update the install instructions:
-- `README.md` — remove the `--no-quarantine` flag and the "Open Anyway" note.
-- The Homebrew cask (`rzkarsyad/homebrew-hum`) — drop `--no-quarantine` from the
-  caveats; a notarized cask installs cleanly.
+You rarely want to run this directly — `scripts/release.sh` calls it and then
+finishes the release in the right order. Publish the GitHub release *before*
+writing the appcast entry: an appcast pointing at an asset that is not live yet
+404s for every client checking for updates.
 
 ## Notes / gotchas to validate on first run
 
-- **Sparkle** has nested XPC services and helper apps; the archive step signs
-  them with your Developer ID. If notarytool flags any unsigned nested code, run
-  `xcrun notarytool log <submission-id> --keychain-profile HumNotary` to see
-  exactly which item, and add an explicit `codesign` step for it before the DMG.
+- **Sparkle's nested code is NOT signed by the archive step.** `Updater.app`,
+  `Autoupdate` and the two XPC services ship ad-hoc signed (`Signature=adhoc`)
+  and Xcode does not descend into the framework, so notarization rejects them
+  for lacking a Developer ID signature and a secure timestamp. `notarize-release.sh`
+  signs them inside-out before re-sealing the app. If notarytool ever flags
+  something else, `xcrun notarytool log <submission-id> --keychain-profile HumNotary`
+  names the exact path.
+- **`CFBundlePackageType` must be `APPL`.** Without it Gatekeeper assesses the
+  bundle as "the code is valid but does not seem to be an app" and refuses it —
+  notarization still succeeds, so this only shows up when someone opens the app.
+- **Staple the `.app`, not just the DMG.** Stapling only the DMG leaves the copy
+  a user drags to /Applications without a ticket, so its first launch needs an
+  online check with Apple. The script notarizes and staples the app first, then
+  wraps it.
 - The MediaRemote adapter works because **/usr/bin/perl** (Apple-signed) loads
   the framework — the app's Hardened Runtime doesn't affect that separate
   process, so browser detection keeps working after notarization.
-- This script has not been run yet (no Developer ID cert exists at authoring
-  time). Validate end-to-end on the first real run and adjust if notarytool
-  reports a nested-signing issue.
+- First run in anger was v1.3.0 (2026-09-12). Apple accepted both submissions
+  and the published DMG, the app inside it, and a copy dragged out all report
+  `accepted / source=Notarized Developer ID` with a valid stapled ticket.
