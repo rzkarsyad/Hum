@@ -113,5 +113,4 @@ xcrun stapler validate "$DMG"
 
 echo ""
 echo "✅ Done: $DMG  (Developer-ID signed, notarized, stapled)"
-echo "   Next: Sparkle-sign it (Sparkle/bin/sign_update), update appcast.xml, and"
-echo "   create the GitHub release. Users no longer need --no-quarantine."
+echo "   scripts/release.sh takes it from here: tag, GitHub release, appcast, cask."
