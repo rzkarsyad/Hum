@@ -157,9 +157,21 @@ func shouldRetryPlayerScript(lastFailure: Date, now: Date) -> Bool {
 @MainActor
 final class MusicObserver: ObservableObject {
     @Published private(set) var currentTrack: Track? = nil
-    @Published private(set) var playbackPosition: TimeInterval = 0
     @Published private(set) var isPlaying: Bool = false
     @Published private(set) var currentArtwork: NSImage? = nil
+
+    /// The interpolated playback position, deliberately kept off this object.
+    ///
+    /// It moves at display rate, so publishing it here woke every observer of
+    /// `MusicObserver` once per frame, costing a full SwiftUI render and AppKit
+    /// layout pass of the whole window every time. Views that animate with the
+    /// raw position observe this clock instead; state derived from it (which
+    /// line is being sung) is recomputed through `onPositionTick`.
+    let clock = PlaybackClock()
+
+    /// Called whenever the position moves, so derived state can be refreshed
+    /// without this object publishing on every tick.
+    var onPositionTick: ((TimeInterval) -> Void)?
 
     private var pollTimer: Timer?
     private var displayTimer: Timer?
@@ -178,17 +190,16 @@ final class MusicObserver: ObservableObject {
     }
 
     func start() {
+        // Timers scheduled on the main run loop already fire on the main thread,
+        // so the work runs inline instead of allocating a Task per tick.
         let poll = Timer(timeInterval: 0.5, repeats: true) { [weak self] _ in
-            Task { @MainActor [weak self] in self?.schedulePoll() }
+            MainActor.assumeIsolated { self?.schedulePoll() }
         }
         RunLoop.main.add(poll, forMode: .common)
         pollTimer = poll
 
-        let display = Timer(timeInterval: 1.0 / 60.0, repeats: true) { [weak self] _ in
-            Task { @MainActor [weak self] in self?.interpolatePosition() }
-        }
-        RunLoop.main.add(display, forMode: .common)
-        displayTimer = display
+        // The display timer stays off until something on screen needs it; see
+        // setDisplayUpdatesEnabled.
 
         // Wake the poll immediately when browser now-playing changes, so the
         // window appears on play without waiting for the next 0.5s tick.
@@ -200,8 +211,34 @@ final class MusicObserver: ObservableObject {
 
     func stop() {
         pollTimer?.invalidate(); pollTimer = nil
-        displayTimer?.invalidate(); displayTimer = nil
+        setDisplayUpdatesEnabled(false)
         browserSource.stop()
+    }
+
+    /// Whether the display-rate tick is currently running.
+    var isDisplayUpdating: Bool { displayTimer != nil }
+
+    /// Whether anything on screen needs the position interpolated between polls.
+    ///
+    /// Only the lyrics window does. While it is hidden, or while nothing is
+    /// playing, the timer is stopped outright instead of ticking into a window
+    /// nobody can see: ordering a window out does not stop SwiftUI rendering it,
+    /// so every invalidation it receives still costs a full render and layout
+    /// pass. With the timer off, the 2 Hz poll keeps derived state honest.
+    func setDisplayUpdatesEnabled(_ enabled: Bool) {
+        guard enabled != (displayTimer != nil) else { return }
+        guard enabled else {
+            displayTimer?.invalidate()
+            displayTimer = nil
+            return
+        }
+        let display = Timer(timeInterval: 1.0 / 60.0, repeats: true) { [weak self] _ in
+            MainActor.assumeIsolated { self?.interpolatePosition() }
+        }
+        RunLoop.main.add(display, forMode: .common)
+        displayTimer = display
+        // Catch up immediately rather than showing a frame of stale position.
+        interpolatePosition()
     }
 
     // Captures main-actor state, then offloads AppleScript execution to background.
@@ -242,9 +279,15 @@ final class MusicObserver: ObservableObject {
                 fetchArtwork(browserData: nil)
             }
 
+            // While the window is hidden the position is tracked but never
+            // published: publishing it would move the active line, and moving
+            // the active line restarts its reveal animation, which SwiftUI then
+            // drives at display rate into a window nobody can see. basePosition
+            // and baseDate below keep advancing, so the moment the window comes
+            // back setDisplayUpdatesEnabled catches it up in one step.
             let interpolated = basePos + prePollDate.timeIntervalSince(baseD)
-            if isSeek(reported: poll.position, interpolated: interpolated) {
-                playbackPosition = poll.position
+            if displayTimer != nil, isSeek(reported: poll.position, interpolated: interpolated) {
+                publishPosition(poll.position)
             }
             basePosition = poll.position
             baseDate = prePollDate
@@ -255,7 +298,7 @@ final class MusicObserver: ObservableObject {
             isPlaying = false
             currentTrack = nil
             currentArtwork = nil
-            playbackPosition = 0
+            publishPosition(0)
             basePosition = 0
             baseDate = prePollDate
             lastBrowserArtwork = nil
@@ -264,7 +307,14 @@ final class MusicObserver: ObservableObject {
 
     private func interpolatePosition() {
         guard isPlaying else { return }
-        playbackPosition = basePosition + Date().timeIntervalSince(baseDate)
+        publishPosition(basePosition + Date().timeIntervalSince(baseDate))
+    }
+
+    /// Single funnel for position changes: the clock the dots animate from, and
+    /// whatever derives state from it.
+    private func publishPosition(_ position: TimeInterval) {
+        clock.update(position)
+        onPositionTick?(position)
     }
 
     // MARK: - Poll scripts (background)

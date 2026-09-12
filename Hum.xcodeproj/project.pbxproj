@@ -16,9 +16,12 @@
 		286E5CF77CF2FF3EA188AD95 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = C247954EB138FF4C92DFFC96 /* Sparkle */; };
 		3C50C467AA9E3B7171E0CC32 /* HumWindowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A17EBBBAF45516CDD6A330FB /* HumWindowView.swift */; };
 		3DC8397BA63DF83D6F5C3F73 /* LRCLIBSearchMatchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAA367308A0325EFC5FAD931 /* LRCLIBSearchMatchTests.swift */; };
+		3FA4920E2C21D7C509A0E26F /* PlaybackTickTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA8DA6E4401CA949EF7A13B4 /* PlaybackTickTests.swift */; };
 		415FF9E43F63DB6EF45B7005 /* LyricsDiskCacheTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7A52699554335D554E49F29 /* LyricsDiskCacheTests.swift */; };
 		5265CEF9B1869B7487946439 /* InstrumentalDotsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2FEAD9005E9BAFADF762008F /* InstrumentalDotsView.swift */; };
 		52A76DC6F91A1681676A511A /* KaraokeItemTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55C8CE5E8D0F48FA979FC375 /* KaraokeItemTests.swift */; };
+		5600F969C4F074A39CDCF327 /* LyricsStateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F81A0C2BC0870D4B3AB13A5 /* LyricsStateTests.swift */; };
+		606A9F8FEC76CEFC7F448A46 /* PlaybackClock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 565F6AE7EA6036E26A2BBC6C /* PlaybackClock.swift */; };
 		641E895CDB59F901977EE0C1 /* MPMediaItemLyricsSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E3447753EE2659B297AD04F /* MPMediaItemLyricsSource.swift */; };
 		7092B0D840FF112E59474BE9 /* KaraokeItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4EC3EF2734DD750A73B4057 /* KaraokeItem.swift */; };
 		7305DA28DA374F62C73D2887 /* Track.swift in Sources */ = {isa = PBXBuildFile; fileRef = E601D5E2E43A0D85F16CCF98 /* Track.swift */; };
@@ -60,6 +63,7 @@
 		01E4916ECFF7F16958A2DD42 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
 		09175628B0280B618A8CDFBD /* LyricsDiskCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LyricsDiskCache.swift; sourceTree = "<group>"; };
 		0E14791D9D57FCBD47D2B5E7 /* WindowManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowManager.swift; sourceTree = "<group>"; };
+		1F81A0C2BC0870D4B3AB13A5 /* LyricsStateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LyricsStateTests.swift; sourceTree = "<group>"; };
 		27213DFD0CB49B1CF95DBF15 /* TextEffects.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextEffects.swift; sourceTree = "<group>"; };
 		2C14D1E028C9F4D214BCB7BF /* KaraokeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KaraokeView.swift; sourceTree = "<group>"; };
 		2FEAD9005E9BAFADF762008F /* InstrumentalDotsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstrumentalDotsView.swift; sourceTree = "<group>"; };
@@ -68,6 +72,7 @@
 		48DFFF1FE0888B369CE5B7EB /* LyricsSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LyricsSource.swift; sourceTree = "<group>"; };
 		4C5C835EF75400339CF29B35 /* WindowFrameTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowFrameTests.swift; sourceTree = "<group>"; };
 		55C8CE5E8D0F48FA979FC375 /* KaraokeItemTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KaraokeItemTests.swift; sourceTree = "<group>"; };
+		565F6AE7EA6036E26A2BBC6C /* PlaybackClock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackClock.swift; sourceTree = "<group>"; };
 		585010E332D2C8FFD45F5DF1 /* HumTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = HumTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		5C49C27855409B5B8BC9469A /* ServiceManagement.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ServiceManagement.framework; path = System/Library/Frameworks/ServiceManagement.framework; sourceTree = SDKROOT; };
 		5FA6F1B07CCCB75111039F64 /* BrowserMediaSourceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserMediaSourceTests.swift; sourceTree = "<group>"; };
@@ -93,6 +98,7 @@
 		D0C31C7A317E4237D5DE93CD /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		D4C2541AAC3AE9BCF56766DA /* Hum.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Hum.entitlements; sourceTree = "<group>"; };
 		D6F0318A2F89BE471687559C /* LRCLIBSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LRCLIBSource.swift; sourceTree = "<group>"; };
+		DA8DA6E4401CA949EF7A13B4 /* PlaybackTickTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackTickTests.swift; sourceTree = "<group>"; };
 		E4EC3EF2734DD750A73B4057 /* KaraokeItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KaraokeItem.swift; sourceTree = "<group>"; };
 		E601D5E2E43A0D85F16CCF98 /* Track.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Track.swift; sourceTree = "<group>"; };
 		F0F8256645875E167B697666 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -130,7 +136,9 @@
 				9A7214A89BA961F2B8081A78 /* LRCParserTests.swift */,
 				B7A52699554335D554E49F29 /* LyricsDiskCacheTests.swift */,
 				6D44CE1050F87B8208EFC257 /* LyricsEngineTests.swift */,
+				1F81A0C2BC0870D4B3AB13A5 /* LyricsStateTests.swift */,
 				A09C814A8A9B00EA368CE05B /* MusicObserverTests.swift */,
+				DA8DA6E4401CA949EF7A13B4 /* PlaybackTickTests.swift */,
 				4C5C835EF75400339CF29B35 /* WindowFrameTests.swift */,
 			);
 			path = HumTests;
@@ -160,6 +168,7 @@
 			children = (
 				8EBCD8699862E86BFB04485B /* BrowserMediaSource.swift */,
 				A71A4A168755ADB39CDDE598 /* MusicObserver.swift */,
+				565F6AE7EA6036E26A2BBC6C /* PlaybackClock.swift */,
 			);
 			path = MusicObserver;
 			sourceTree = "<group>";
@@ -348,7 +357,9 @@
 				2712BFE4B30D4479B7A1D370 /* LRCParserTests.swift in Sources */,
 				415FF9E43F63DB6EF45B7005 /* LyricsDiskCacheTests.swift in Sources */,
 				D3893A676538A199EC320E5C /* LyricsEngineTests.swift in Sources */,
+				5600F969C4F074A39CDCF327 /* LyricsStateTests.swift in Sources */,
 				B5A37513984E0D7EB17F9638 /* MusicObserverTests.swift in Sources */,
+				3FA4920E2C21D7C509A0E26F /* PlaybackTickTests.swift in Sources */,
 				A31BBB49E9461EAA2A751C02 /* WindowFrameTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -376,6 +387,7 @@
 				AE1F6D945F3B9A0D5C4E23A5 /* MusicKitSource.swift in Sources */,
 				AE1F4549E08AEF9E64924879 /* MusicObserver.swift in Sources */,
 				9241AD3B726EC4DC3D0067A3 /* OnboardingView.swift in Sources */,
+				606A9F8FEC76CEFC7F448A46 /* PlaybackClock.swift in Sources */,
 				829B21E9146EC21C2A69D708 /* StatusBarController.swift in Sources */,
 				EFF6FF0369A31AE301974E23 /* TextEffects.swift in Sources */,
 				7305DA28DA374F62C73D2887 /* Track.swift in Sources */,

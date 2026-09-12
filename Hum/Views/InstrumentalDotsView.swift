@@ -22,18 +22,19 @@ struct DotsRow: View {
     }
 }
 
-/// Live instrumental indicator: observes MusicObserver and fills the dots as the
-/// gap between `start` and `end` elapses. Updates at 60fps independently of the
-/// enclosing (equatable) KaraokeView.
+/// Live instrumental indicator: observes the playback clock and fills the dots as
+/// the gap between `start` and `end` elapses. Updates at display rate independently
+/// of the enclosing (equatable) KaraokeView. Because the clock is its own
+/// object, that tick reaches only this row rather than the whole window.
 struct InstrumentalDotsView: View {
     let start: TimeInterval
     let end: TimeInterval
     let fontSize: CGFloat
-    @ObservedObject var clock: MusicObserver
+    @ObservedObject var clock: PlaybackClock
 
     private var progress: Double {
         guard end > start else { return 0 }
-        return min(max((clock.playbackPosition - start) / (end - start), 0), 1)
+        return min(max((clock.position - start) / (end - start), 0), 1)
     }
 
     var body: some View {

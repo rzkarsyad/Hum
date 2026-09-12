@@ -135,11 +135,16 @@ final class StatusBarController: NSObject {
         Publishers.CombineLatest3(musicObserver.$isPlaying, hasContentPublisher, lyricsState.$isManuallyHidden)
             .sink { [weak self] isPlaying, hasContent, isHidden in
                 guard let self else { return }
-                if isPlaying && hasContent && !isHidden {
+                let visible = isPlaying && hasContent && !isHidden
+                if visible {
                     self.windowManager.show()
                 } else {
                     self.windowManager.hide()
                 }
+                // Nothing off-screen animates with the position, and an
+                // ordered-out window is still rendered by SwiftUI for every
+                // invalidation it gets, so stop the tick along with the window.
+                self.musicObserver.setDisplayUpdatesEnabled(visible)
             }
             .store(in: &cancellables)
 

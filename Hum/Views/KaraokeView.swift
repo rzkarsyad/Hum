@@ -4,9 +4,9 @@ struct KaraokeView: View, Equatable {
     let items: [KaraokeItem]
     let active: Int?
     let fontSize: CGFloat
-    let musicObserver: MusicObserver
+    let clock: PlaybackClock
 
-    // Equality intentionally excludes musicObserver: the dots subview observes it
+    // Equality intentionally excludes the clock: the dots subview observes it
     // directly, so KaraokeView's body only re-evaluates on structural changes.
     static func == (lhs: KaraokeView, rhs: KaraokeView) -> Bool {
         lhs.items == rhs.items && lhs.active == rhs.active && lhs.fontSize == rhs.fontSize
@@ -113,7 +113,7 @@ struct KaraokeView: View, Equatable {
         case .instrumental(let start, let end):
             Group {
                 if index == active {
-                    InstrumentalDotsView(start: start, end: end, fontSize: fontSize, clock: musicObserver)
+                    InstrumentalDotsView(start: start, end: end, fontSize: fontSize, clock: clock)
                 } else {
                     DotsRow(fills: [0, 0, 0], fontSize: fontSize)
                         .opacity(lineOpacity(for: index))
