@@ -10,6 +10,7 @@
 		027A2F7590AA132C5DDA1BA4 /* MediaRemoteAdapter in Resources */ = {isa = PBXBuildFile; fileRef = 951ADDE294A328EA676E3813 /* MediaRemoteAdapter */; };
 		046E8B23C002EF578A764551 /* HumApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = ADCCDFCDE8EC033A84466191 /* HumApp.swift */; };
 		0724BA8428CDA8F563795E77 /* BrowserMediaSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8EBCD8699862E86BFB04485B /* BrowserMediaSource.swift */; };
+		087F3B07DA70BEB363BA2102 /* LRCLIBRequestTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F468136D0A9CE147EE8846DC /* LRCLIBRequestTests.swift */; };
 		139F872723D69437A2ADC3BF /* WindowManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E14791D9D57FCBD47D2B5E7 /* WindowManager.swift */; };
 		2712BFE4B30D4479B7A1D370 /* LRCParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A7214A89BA961F2B8081A78 /* LRCParserTests.swift */; };
 		286E5CF77CF2FF3EA188AD95 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = C247954EB138FF4C92DFFC96 /* Sparkle */; };
@@ -93,6 +94,7 @@
 		E4EC3EF2734DD750A73B4057 /* KaraokeItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KaraokeItem.swift; sourceTree = "<group>"; };
 		E601D5E2E43A0D85F16CCF98 /* Track.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Track.swift; sourceTree = "<group>"; };
 		F0F8256645875E167B697666 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		F468136D0A9CE147EE8846DC /* LRCLIBRequestTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LRCLIBRequestTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -121,6 +123,7 @@
 			children = (
 				5FA6F1B07CCCB75111039F64 /* BrowserMediaSourceTests.swift */,
 				55C8CE5E8D0F48FA979FC375 /* KaraokeItemTests.swift */,
+				F468136D0A9CE147EE8846DC /* LRCLIBRequestTests.swift */,
 				BAA367308A0325EFC5FAD931 /* LRCLIBSearchMatchTests.swift */,
 				9A7214A89BA961F2B8081A78 /* LRCParserTests.swift */,
 				B7A52699554335D554E49F29 /* LyricsDiskCacheTests.swift */,
@@ -337,6 +340,7 @@
 			files = (
 				8A65561CA17368DB3C5CCCB0 /* BrowserMediaSourceTests.swift in Sources */,
 				52A76DC6F91A1681676A511A /* KaraokeItemTests.swift in Sources */,
+				087F3B07DA70BEB363BA2102 /* LRCLIBRequestTests.swift in Sources */,
 				3DC8397BA63DF83D6F5C3F73 /* LRCLIBSearchMatchTests.swift in Sources */,
 				2712BFE4B30D4479B7A1D370 /* LRCParserTests.swift in Sources */,
 				415FF9E43F63DB6EF45B7005 /* LyricsDiskCacheTests.swift in Sources */,
