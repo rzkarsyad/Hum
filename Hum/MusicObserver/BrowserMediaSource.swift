@@ -17,6 +17,26 @@ struct BrowserSnapshot: Equatable {
 
 private let iso8601Formatter = ISO8601DateFormatter()
 
+/// How long a stream must survive before it counts as healthy, so an adapter
+/// that dies once a week does not exhaust the crash-loop budget.
+let adapterHealthyRunSeconds: TimeInterval = 60
+
+/// Decides what to do when the adapter stream ends: how long to wait before
+/// relaunching and what the failure count becomes, or nil to give up.
+///
+/// `failures` counts *consecutive* quick deaths. A stream that ran longer than
+/// `adapterHealthyRunSeconds` before dying resets the budget — otherwise a menu
+/// bar app left running for weeks would permanently disable browser detection
+/// after a handful of unrelated, individually-recovered failures.
+func adapterRetry(failures: Int, ranFor: TimeInterval, maxFailures: Int)
+    -> (delay: TimeInterval, failures: Int)?
+{
+    let consecutive = ranFor >= adapterHealthyRunSeconds ? 0 : failures
+    let next = consecutive + 1
+    guard next <= maxFailures else { return nil }
+    return (min(pow(2.0, Double(next)), 30), next)
+}
+
 /// Extrapolate the live playback position from a sampled position and its anchor
 /// time. The adapter only emits on state changes, so between emits the position
 /// must be projected forward from `anchor` (the media's own timestamp) — anchoring
@@ -177,15 +197,18 @@ final class BrowserMediaSource {
             self?.ingest(chunk)
         }
 
+        let startedAt = Date()
         proc.terminationHandler = { [weak self] _ in
             guard let self, !self.isStopped else { return }
-            self.failureCount += 1
-            guard self.failureCount <= self.maxFailures else {
+            guard let retry = adapterRetry(failures: self.failureCount,
+                                           ranFor: Date().timeIntervalSince(startedAt),
+                                           maxFailures: self.maxFailures)
+            else {
                 NSLog("[Hum] MediaRemote adapter failed repeatedly — browser detection disabled.")
                 return
             }
-            let delay = min(pow(2.0, Double(self.failureCount)), 30)
-            DispatchQueue.global().asyncAfter(deadline: .now() + delay) { [weak self] in
+            self.failureCount = retry.failures
+            DispatchQueue.global().asyncAfter(deadline: .now() + retry.delay) { [weak self] in
                 guard let self, !self.isStopped else { return }
                 self.launchStream()
             }
