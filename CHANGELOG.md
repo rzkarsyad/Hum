@@ -4,6 +4,13 @@ All notable changes to Hum are documented here.
 
 ## [Unreleased]
 
+## [1.3.2] — 2026-09-12
+
+### Fixed
+
+- **The lyrics window can no longer disappear onto a monitor you unplugged** — if you moved Hum to an external display and then disconnected it, the window was restored to coordinates no attached screen covered. With no Dock icon and no window frame there was nothing left to click or drag, so Hum looked broken until its preferences were deleted by hand. The saved position is now checked against the displays you actually have, and brought back to the nearest one when it no longer fits.
+- **Updating a music player no longer disables it until Hum restarts** — if Spotify or Apple Music was replaced while Hum was running, Hum could stop reading that player for the rest of the session.
+
 ## [1.3.1] — 2026-09-12
 
 ### Fixed
