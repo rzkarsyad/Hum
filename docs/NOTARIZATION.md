@@ -32,6 +32,11 @@ that used to be manual and order-sensitive:
    the asset is live, so no update check can hit a 404.
 6. **Cask** — bump version and sha256 in `rzkarsyad/homebrew-hum`.
 
+`main` is branch-protected and requires the `xcodebuild test` check. Admins can
+still push directly, which is what step 5 does; if that push is ever refused the
+script opens a PR instead and tells you Sparkle will not offer the update until
+it is merged.
+
 Rehearse without publishing anything:
 
 ```bash
