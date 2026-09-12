@@ -30,6 +30,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             windowManager: windowManager,
             updater: updaterController.updater
         )
+        // Derived lyric state is refreshed from the position tick rather than by
+        // republishing the position itself, which would wake the whole window.
+        musicObserver.onPositionTick = { [weak self] position in
+            self?.lyricsState.updatePosition(position)
+        }
         musicObserver.start()
 
         if !UserDefaults.standard.bool(forKey: "hasSeenOnboarding") {

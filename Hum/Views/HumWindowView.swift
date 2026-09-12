@@ -12,11 +12,11 @@ struct HumWindowView: View {
     @ObservedObject var musicObserver: MusicObserver
 
     var body: some View {
-        // Computed once per body pass (body re-runs at 60fps via musicObserver):
-        // buildItems is deterministic in lyricsState.lines, so the resulting array
-        // compares equal across ticks and KaraokeView's .equatable() gate skips it.
-        let items = buildItems(from: lyricsState.lines)
-        let activeItem = activeItemIndex(in: items, at: musicObserver.playbackPosition)
+        // Both are stored on LyricsState and republished only when they
+        // actually change: the item list once per song, the active index about
+        // once a line. So this body no longer re-runs at display rate.
+        let items = lyricsState.items
+        let activeItem = lyricsState.activeItem
         ZStack {
             VibrancyView()
             VStack(spacing: 0) {
@@ -46,7 +46,7 @@ struct HumWindowView: View {
                         items: items,
                         active: activeItem,
                         fontSize: lyricsState.fontSize,
-                        musicObserver: musicObserver
+                        clock: musicObserver.clock
                     )
                     .equatable()
                 } else if lyricsState.networkError {
