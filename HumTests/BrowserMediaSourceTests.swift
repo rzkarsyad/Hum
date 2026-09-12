@@ -118,3 +118,35 @@ final class BrowserMediaSourceTests: XCTestCase {
                        15, accuracy: 0.001)
     }
 }
+
+final class AdapterRetryTests: XCTestCase {
+
+    func test_backsOffExponentiallyWhileCrashLooping() {
+        XCTAssertEqual(adapterRetry(failures: 0, ranFor: 0.5, maxFailures: 5)?.delay, 2)
+        XCTAssertEqual(adapterRetry(failures: 1, ranFor: 0.5, maxFailures: 5)?.delay, 4)
+        XCTAssertEqual(adapterRetry(failures: 2, ranFor: 0.5, maxFailures: 5)?.delay, 8)
+    }
+
+    func test_delayIsCapped() {
+        XCTAssertEqual(adapterRetry(failures: 4, ranFor: 0.5, maxFailures: 9)?.delay, 30)
+    }
+
+    func test_givesUpAfterMaxConsecutiveFailures() {
+        XCTAssertNotNil(adapterRetry(failures: 4, ranFor: 0.5, maxFailures: 5))
+        XCTAssertNil(adapterRetry(failures: 5, ranFor: 0.5, maxFailures: 5))
+    }
+
+    // The regression this exists for: a menu bar app runs for weeks, so failures
+    // separated by days must not accumulate toward the crash-loop budget.
+    func test_healthyRunResetsTheBudget() {
+        let retry = adapterRetry(failures: 4, ranFor: adapterHealthyRunSeconds, maxFailures: 5)
+        XCTAssertEqual(retry?.failures, 1, "a healthy run should restart the budget")
+        XCTAssertEqual(retry?.delay, 2, "and the backoff should start from the bottom again")
+    }
+
+    func test_healthyRunRescuesAnOtherwiseExhaustedBudget() {
+        XCTAssertNil(adapterRetry(failures: 5, ranFor: 59, maxFailures: 5))
+        XCTAssertNotNil(adapterRetry(failures: 5, ranFor: 61, maxFailures: 5),
+                        "after weeks of uptime the adapter must still be allowed to recover")
+    }
+}
