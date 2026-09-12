@@ -1,0 +1,4 @@
+# Only the landing page is deployed. The macOS app, its Xcode build artifacts
+# and its archives never need to reach Vercel.
+/*
+!/site
