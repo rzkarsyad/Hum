@@ -4,6 +4,10 @@ All notable changes to Hum are documented here.
 
 ## [Unreleased]
 
+### Fixed
+
+- **Browser lyrics no longer stop working after a long uptime** — the helper that reads browser playback is restarted automatically if it ever dies, but the retry budget was counted over the app's whole lifetime instead of per crash-loop. Five unrelated hiccups across days of uptime, each of which recovered on its own, would silently disable browser detection until Hum was restarted.
+
 ## [1.3.0] — 2026-09-12
 
 ### Fixed
