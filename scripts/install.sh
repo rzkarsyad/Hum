@@ -1,4 +1,11 @@
 #!/bin/bash
+#
+# Build Hum from source and drop it into /Applications — a development
+# convenience, NOT the shipping build. The result is ad-hoc signed and carries
+# no notarization ticket, so it will replace a notarized install with one
+# Gatekeeper treats differently. For the real thing use the release DMG or
+# `brew install --cask rzkarsyad/hum/hum`.
+#
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
