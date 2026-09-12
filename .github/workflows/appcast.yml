@@ -1,0 +1,72 @@
+name: Appcast
+
+# A broken appcast is invisible until someone's auto-update silently fails, so
+# validate it whenever it changes. None of this needs signing secrets.
+on:
+  pull_request:
+    paths: [appcast.xml]
+  push:
+    branches: [main]
+    paths: [appcast.xml]
+
+jobs:
+  validate:
+    name: validate appcast.xml
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Validate
+        run: |
+          python3 - <<'PY'
+          import sys, urllib.request, xml.etree.ElementTree as ET
+
+          NS = {"sparkle": "http://www.andymatuschak.org/xml-namespaces/sparkle"}
+          tree = ET.parse("appcast.xml")          # fails loudly if malformed
+          items = tree.findall(".//item")
+          if not items:
+              sys.exit("appcast.xml has no <item>")
+
+          failures = []
+          for item in items:
+              title = item.findtext("title") or "<untitled>"
+              enclosure = item.find("enclosure")
+              if enclosure is None:
+                  failures.append(f"{title}: no <enclosure>")
+                  continue
+
+              url = enclosure.get("url")
+              declared = enclosure.get("length")
+              signature = enclosure.get(f"{{{NS['sparkle']}}}edSignature")
+
+              if not signature:
+                  failures.append(f"{title}: missing sparkle:edSignature")
+
+              try:
+                  request = urllib.request.Request(url, method="HEAD")
+                  with urllib.request.urlopen(request, timeout=30) as response:
+                      actual = response.headers.get("Content-Length")
+                      status = response.status
+              except Exception as error:
+                  failures.append(f"{title}: {url} unreachable ({error})")
+                  continue
+
+              if status != 200:
+                  failures.append(f"{title}: {url} returned HTTP {status}")
+              elif actual is not None and declared != actual:
+                  # Sparkle rejects a download whose size disagrees with the feed.
+                  failures.append(
+                      f"{title}: length={declared} but the asset is {actual} bytes"
+                  )
+              else:
+                  print(f"ok  {title}  {declared} bytes")
+
+          if failures:
+              for line in failures:
+                  print(f"::error::{line}")
+              sys.exit(1)
+          print(f"\n{len(items)} item(s) validated")
+          PY
+        shell: bash
