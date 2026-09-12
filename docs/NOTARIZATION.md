@@ -33,9 +33,20 @@ that used to be manual and order-sensitive:
 6. **Cask** — bump version and sha256 in `rzkarsyad/homebrew-hum`.
 
 `main` is branch-protected and requires the `xcodebuild test` check. Admins can
-still push directly, which is what step 5 does; if that push is ever refused the
-script opens a PR instead and tells you Sparkle will not offer the update until
-it is merged.
+still push directly, which is what step 5 does; if that push is ever refused,
+`scripts/publish-appcast.sh` opens a PR instead and tells you Sparkle will not
+offer the update until it is merged.
+
+That fallback is split into its own script precisely so it does not have to
+wait for a real release to run for the first time. To exercise it deliberately,
+turn `enforce_admins` on for `main`, make a commit, and run it directly:
+
+```bash
+scripts/publish-appcast.sh <tag>
+```
+
+It should refuse the direct push, open a PR, and leave `main` level with
+`origin/main` — then turn `enforce_admins` back off.
 
 Rehearse without publishing anything:
 
